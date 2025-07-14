@@ -1,1 +1,4 @@
-appunti/
+appunti/*
+des-python/*
+*/desPython/__pycache__/*
+*/__pycache__/*
