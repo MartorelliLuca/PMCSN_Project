@@ -36,7 +36,7 @@
  # 
  #--------------------------------------------------------------------------
 
-from rngs import random
+from desPython.rng import random
 from math import log,sqrt,exp
 
 def Bernoulli(p):
@@ -117,6 +117,7 @@ def Uniform(a,b):
   return (a + (b - a) * random())
 
 def Exponential(m):
+  #m = 1/λ, ovvero il tempo di interarrivo
   #=========================================================
   #Returns an exponentially distributed positive real number. 
   #NOTE: use m > 0.0

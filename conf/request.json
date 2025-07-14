@@ -1,0 +1,7 @@
+{
+    "person": {
+        "mean_time_to_fill_out": 30,
+        "variance_time_to_fill_out": 10
+
+    }
+}

@@ -1,9 +1,11 @@
 class Request:
 
-    def __init__(self, ID):
+    def __init__(self, ID,creation_time):
             self.ID = ID
-            self.creation_time = None
+            self.creation_time = creation_time
             self.destr_time = None
+            self.time_to_fill_out = 30
+            self.times_tried_to_fill_out = 1
 
     def setCreationTime(self, creation_time):
         self.creation_time = creation_time
