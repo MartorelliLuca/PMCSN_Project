@@ -1,10 +1,6 @@
-import sys
-import os
-
-# Importa i moduli
-import desPython.rng
-import desPython.rngs
-import desPython.rvms
+import desPython.rng as rng
+import desPython.rngs as rngs
+import desPython.rvms as rvms
 
 class MainVerifier:
     def __init__(self):
@@ -12,8 +8,8 @@ class MainVerifier:
 
     def test_rng(self):
         try:
-            desPython.rng.testRandom()
-            numeroRandom1 = desPython.rng.random()
+            rng.testRandom()
+            numeroRandom1 = rng.random()
             print(f"🔢 Valore casuale da rng: {numeroRandom1:.4f}")
             self.results["rng"] = "✅ Passed"
         except Exception as e:
@@ -21,8 +17,8 @@ class MainVerifier:
 
     def test_rngs(self):
         try:
-            desPython.rngs.testRandom()
-            numeroRandom2 = desPython.rngs.random()
+            rngs.testRandom()
+            numeroRandom2 = rngs.random()
             print(f"🔢 Valore casuale da rngs: {numeroRandom2:.4f}")
             self.results["rngs"] = "✅ Passed"
         except Exception as e:
@@ -30,7 +26,7 @@ class MainVerifier:
 
     def test_rvms(self):
         try:
-            value = desPython.rvms.idfNormal(0, 1, 0.975)
+            value = rvms.idfNormal(0, 1, 0.975)
             if 1.9 < value < 2.1:
                 self.results["rvms"] = f"✅ Passed (idfNormal(0,1,0.975) ≈ {value:.4f})"
             else:
