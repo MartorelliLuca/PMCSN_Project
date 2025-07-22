@@ -99,7 +99,7 @@ class ExponentialService(SimBlockInterface):
     def serveNext(self)->list[Event]:
         """Gestisce il completamento del servizio della persona attualmente in lavorazione.
         Se ci sono persone in coda, crea un evento per la prossima persona da elaborare.
-        Se ha elaborato qualcuno lo passa al blocco successivo e se rivene un evento lo aggiunge alla lista degli eventi da ritornare.
+        Se ha elaborato qualcuno lo passa al blocco successivo e se riceve un evento lo aggiunge alla lista degli eventi da ritornare.
         
         Returns:
             list[Event]: Una lista di eventi da processare, che contiene l'evento di inizio del servizio della prossima persona in coda se presente.

@@ -45,6 +45,6 @@ class SimulationEngine:
                     for new_event in new_events:
                         self.event_queue.push(new_event)
         # Scrive i risultati finali in formato testuale e JSON.
-        endBlock.write_all_outputs()
+        endBlock.finalize()
 
 

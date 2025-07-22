@@ -6,18 +6,32 @@ from simulation.states.NormalState import NormalState
 from desPython import rvgs
 from datetime import timedelta
 import json
+import os
 
 
 class EndBlock(SimBlockInterface):
     """Blocco finale della simulazione che registra il completamento delle entità.
     
-    Gestisce la raccolta e formattazione dei risultati della simulazione sia in formato
-    testuale che JSON per l'analisi dei dati.
+    Usa streaming writes per ottimizzare performance e memoria.
     """
-    def __init__(self):
-        """Inizializza il blocco finale con array per log testuale e JSON."""
-        self.output_log = []
-        self.json_log = []
+    def __init__(self, output_file="simulation_results.json"):
+        """Inizializza il blocco finale con streaming writes.
+        
+        Args:
+            output_file (str): Nome del file di output (JSON Lines format)
+        """
+        self.output_file = output_file
+        self.total_processed = 0
+        self.file_handle = open(self.output_file, 'w', encoding='utf-8', buffering=8192)
+        
+        # Write metadata as first line
+        metadata = {
+            "type": "metadata",
+            "start_timestamp": datetime.now().isoformat(),
+            "format": "json_lines"
+        }
+        self.file_handle.write(json.dumps(metadata) + '\n')
+        self.file_handle.flush()
 
     def putInQueue(self, person: Person, timestamp: datetime) -> list[Event]:
         """Elabora una persona che completa la simulazione.
@@ -34,6 +48,7 @@ class EndBlock(SimBlockInterface):
         
         # Create JSON representation
         person_data = {
+            "type": "entity",
             "person_id": person.ID,
             "completion_timestamp": timestamp.isoformat(),
             "total_states": len(person.states),
@@ -43,105 +58,37 @@ class EndBlock(SimBlockInterface):
                 if person.states else 0
             )
         }
-        self.json_log.append(person_data)
         
-        # Collect text output
-        output = []
-        output.append("\n" + "="*50)
-        output.append(f"🏁 END BLOCK - Person {person.ID} has completed the simulation")
-        output.append(f"   Final timestamp: {timestamp}")
-        output.append("="*50)
+        # Write immediately (streaming)
+        self.file_handle.write(json.dumps(person_data) + '\n')
+        self.total_processed += 1
         
-        # Display the state chain
-        output.append(f"\n📊 State Chain for Person {person.ID}:")
-        output.append("   " + "-" * 40)
-        
-        for i, state in enumerate(person.states):
-            service_duration = "N/A"
-            if hasattr(state, 'service_start_time') and hasattr(state, 'service_end_time'):
-                if state.service_start_time and state.service_end_time:
-                    duration = state.service_end_time - state.service_start_time
-                    service_duration = f"{duration.total_seconds():.2f}s"
-            
-            output.append(f"   [{i+1}] Service: {state.name}")
-            output.append(f"       Queue Entry: {state.enqueue_time}")
-            if hasattr(state, 'service_start_time') and state.service_start_time:
-                output.append(f"       Service Start: {state.service_start_time}")
-            if hasattr(state, 'service_end_time') and state.service_end_time:
-                output.append(f"       Service End: {state.service_end_time}")
-            output.append(f"       Service Duration: {service_duration}")
-            if i < len(person.states) - 1:
-                output.append("       ↓")
-        
-        output.append("   " + "-" * 40)
-        output.append("✅ Person processing complete!\n")
-        
-        # Add to the main log and print both formats
-        self.output_log.extend(output)
-        
-        # Print text format
-        #for line in output:
-            #print(line)
-            
-        # Print JSON format
-        #print(f"\n📊 JSON Data for Person {person.ID}:")
-        #print(json.dumps(person_data, indent=2, ensure_ascii=False))
-        #print("-" * 50)
+        # Periodic flush and progress
+        if self.total_processed % 1000 == 0:
+            self.file_handle.flush()  # Ensure data is written to disk
+            #print(f"📊 Processed: {self.total_processed} entities")
             
         return []
     
-    def write_output_to_file(self, filename="simulation_results.txt"):
-        """Scrive tutto l'output raccolto in un file di testo.
+    def finalize(self):
+        """Finalizza la simulazione."""
+        # Write final metadata
+        final_metadata = {
+            "type": "completion",
+            "completion_timestamp": datetime.now().isoformat(),
+            "total_entities_processed": self.total_processed,
+            "simulation_complete": True
+        }
+        self.file_handle.write(json.dumps(final_metadata) + '\n')
+        self.file_handle.close()
         
-        Args:
-            filename (str): Nome del file di output. Default: "simulation_results.txt"
-        """
-        try:
-            with open(filename, 'w', encoding='utf-8') as file:
-                for line in self.output_log:
-                    file.write(line + '\n')
-            print(f"📁 Risultati testuali scritti in: {filename}")
-        except Exception as e:
-            print(f"❌ Errore nella scrittura del file {filename}: {e}")
+        print(f"✅ Simulation finalized: {self.total_processed} entities processed")
+        print(f"📁 Results saved to: {self.output_file}")
     
-    def write_json_to_file(self, filename="simulation_results.json"):
-        """Scrive tutti i dati JSON in un file.
-        
-        Args:
-            filename (str): Nome del file JSON. Default: "simulation_results.json"
-        """
-        try:
-            with open(filename, 'w', encoding='utf-8') as file:
-                json.dump({
-                    "simulation_results": self.json_log,
-                    "total_persons": len(self.json_log),
-                    "export_timestamp": datetime.now().isoformat()
-                }, file, indent=2, ensure_ascii=False)
-            print(f"📊 Dati JSON scritti in: {filename}")
-        except Exception as e:
-            print(f"❌ Errore nella scrittura del file JSON {filename}: {e}")
-    
-    def write_all_outputs(self, text_filename="simulation_results.txt", 
-                          json_filename="simulation_results.json"):
-        """Scrive sia l'output testuale che i dati JSON.
-        
-        Args:
-            text_filename (str): Nome del file di testo.
-            json_filename (str): Nome del file JSON.
-        """
-        self.write_output_to_file(text_filename)
-        self.write_json_to_file(json_filename)
-    
-    def clear_output_log(self):
-        """Svuota sia i log testuali che JSON."""
-        self.output_log = []
-        self.json_log = []
-        print("🗑️ Log di output svuotati")
-    
-    def get_json_data(self) -> list:
-        """Restituisce i dati JSON raccolti.
-        
-        Returns:
-            list: Lista dei dati JSON delle persone processate.
-        """
-        return self.json_log 
+    def get_stats(self) -> dict:
+        """Restituisce statistiche sulla simulazione corrente."""
+        return {
+            "total_processed": self.total_processed,
+            "output_file": self.output_file,
+            "file_open": not self.file_handle.closed
+        }

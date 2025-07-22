@@ -147,7 +147,7 @@ Se il blocco è vuoto, crea un evento che rappresenta l’inizio del servizio de
 <span class="sig-name descname"><span class="pre">serveNext</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="src.simulation.Event.html#src.simulation.Event.Event" title="src.simulation.Event.Event"><span class="pre">Event</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#simulation.blocks.ExponentialService.ExponentialService.serveNext" title="Link to this definition">¶</a></dt>
 <dd><p>Gestisce il completamento del servizio della persona attualmente in lavorazione.
 Se ci sono persone in coda, crea un evento per la prossima persona da elaborare.
-Se ha elaborato qualcuno lo passa al blocco successivo e se rivene un evento lo aggiunge alla lista degli eventi da ritornare.</p>
+Se ha elaborato qualcuno lo passa al blocco successivo e se riceve un evento lo aggiunge alla lista degli eventi da ritornare.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Ritorna<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Una lista di eventi da processare, che contiene l’evento di inizio del servizio della prossima persona in coda se presente.</p>

@@ -54,3 +54,7 @@ PMCSN_Project/
 - Python 3.x
 - Sphinx (for documentation)
 (for now)
+
+
+
+du -b simulation_results.json | awk '{printf "%.6f GB\n", $1/1024/1024/1024}'

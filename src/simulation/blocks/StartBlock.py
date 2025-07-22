@@ -72,16 +72,29 @@ class StartBlock(SimBlockInterface):
             return []
         if self.generated >= self.toSim:
             return []
-        serving=self.next
+        
+        serving = self.next
         self.next = None
         endTime = serving.get_last_state().service_end_time
         events = []
+        
         if self.nextBlock:
             event = self.nextBlock.putInQueue(serving, endTime)
             if event:
                 events.extend(event)
+        
+        # Print progress at regular intervals
+        if self.generated % max(1, self.toSim // 1000) == 0:  # Print every 5%
+            progress = (self.generated / self.toSim) * 100
+            print(f"[{self.name}] Progress: {self.generated}/{self.toSim} ({progress:.1f}%)")
+        
         if self.generated < self.toSim:
             new_event = self.start()
             if new_event:
                 events.append(new_event)
+        
+        # Print completion message
+        if self.generated >= self.toSim:
+            print(f"[{self.name}] Generation complete: {self.toSim} entities generated")
+        
         return events if events else []
