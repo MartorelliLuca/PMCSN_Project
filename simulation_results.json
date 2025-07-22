@@ -1,0 +1,134 @@
+{
+  "simulation_results": [
+    {
+      "person_id": 0,
+      "completion_timestamp": "2023-10-01T00:00:00.055979",
+      "total_states": 3,
+      "states": [
+        {
+          "service_name": "StartingBlock",
+          "enqueue_time": "2023-10-01T00:00:00.027652",
+          "service_start_time": "2023-10-01T00:00:00.027652",
+          "service_end_time": "2023-10-01T00:00:00.027652",
+          "queue_length": 0,
+          "service_duration_seconds": 0.0
+        },
+        {
+          "service_name": "ExponentialService",
+          "enqueue_time": "2023-10-01T00:00:00.027652",
+          "service_start_time": "2023-10-01T00:00:00.027652",
+          "service_end_time": "2023-10-01T00:00:00.055979",
+          "queue_length": 0,
+          "service_duration_seconds": 0.028327
+        },
+        {
+          "service_name": "EndBlock",
+          "enqueue_time": "2023-10-01T00:00:00.055979",
+          "service_start_time": null,
+          "service_end_time": null,
+          "queue_length": 0,
+          "service_duration_seconds": null
+        }
+      ],
+      "total_simulation_time": 0.028327
+    },
+    {
+      "person_id": 1,
+      "completion_timestamp": "2023-10-01T00:00:00.717791",
+      "total_states": 3,
+      "states": [
+        {
+          "service_name": "StartingBlock",
+          "enqueue_time": "2023-10-01T00:00:00.645337",
+          "service_start_time": "2023-10-01T00:00:00.645337",
+          "service_end_time": "2023-10-01T00:00:00.645337",
+          "queue_length": 0,
+          "service_duration_seconds": 0.0
+        },
+        {
+          "service_name": "ExponentialService",
+          "enqueue_time": "2023-10-01T00:00:00.645337",
+          "service_start_time": "2023-10-01T00:00:00.645337",
+          "service_end_time": "2023-10-01T00:00:00.717791",
+          "queue_length": 0,
+          "service_duration_seconds": 0.072454
+        },
+        {
+          "service_name": "EndBlock",
+          "enqueue_time": "2023-10-01T00:00:00.717791",
+          "service_start_time": null,
+          "service_end_time": null,
+          "queue_length": 0,
+          "service_duration_seconds": null
+        }
+      ],
+      "total_simulation_time": 0.072454
+    },
+    {
+      "person_id": 2,
+      "completion_timestamp": "2023-10-01T00:00:01.655450",
+      "total_states": 3,
+      "states": [
+        {
+          "service_name": "StartingBlock",
+          "enqueue_time": "2023-10-01T00:00:01.626258",
+          "service_start_time": "2023-10-01T00:00:01.626258",
+          "service_end_time": "2023-10-01T00:00:01.626258",
+          "queue_length": 0,
+          "service_duration_seconds": 0.0
+        },
+        {
+          "service_name": "ExponentialService",
+          "enqueue_time": "2023-10-01T00:00:01.626258",
+          "service_start_time": "2023-10-01T00:00:01.626258",
+          "service_end_time": "2023-10-01T00:00:01.655450",
+          "queue_length": 0,
+          "service_duration_seconds": 0.029192
+        },
+        {
+          "service_name": "EndBlock",
+          "enqueue_time": "2023-10-01T00:00:01.655450",
+          "service_start_time": null,
+          "service_end_time": null,
+          "queue_length": 0,
+          "service_duration_seconds": null
+        }
+      ],
+      "total_simulation_time": 0.029192
+    },
+    {
+      "person_id": 3,
+      "completion_timestamp": "2023-10-01T00:00:02.355657",
+      "total_states": 3,
+      "states": [
+        {
+          "service_name": "StartingBlock",
+          "enqueue_time": "2023-10-01T00:00:02.172094",
+          "service_start_time": "2023-10-01T00:00:02.172094",
+          "service_end_time": "2023-10-01T00:00:02.172094",
+          "queue_length": 0,
+          "service_duration_seconds": 0.0
+        },
+        {
+          "service_name": "ExponentialService",
+          "enqueue_time": "2023-10-01T00:00:02.172094",
+          "service_start_time": "2023-10-01T00:00:02.172094",
+          "service_end_time": "2023-10-01T00:00:02.355657",
+          "queue_length": 0,
+          "service_duration_seconds": 0.183563
+        },
+        {
+          "service_name": "EndBlock",
+          "enqueue_time": "2023-10-01T00:00:02.355657",
+          "service_start_time": null,
+          "service_end_time": null,
+          "queue_length": 0,
+          "service_duration_seconds": null
+        }
+      ],
+      "total_simulation_time": 0.183563
+    }
+  ],
+  "total_persons": 4,
+  "export_timestamp": "2025-07-22T15:11:57.559094"
+}

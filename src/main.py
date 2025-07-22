@@ -1,8 +1,8 @@
 
 
-from tests import SImulation
+from simulation import SImulationEngine
 
 
 if __name__ == "__main__":
-    SImulation.printrnd()
+    SImulationEngine.SimulationEngine(5)
     pass
