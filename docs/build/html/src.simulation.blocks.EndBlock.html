@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+
+<html lang="it" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>src.simulation.blocks.EndBlock module &#8212; pm 1.0 documentazione</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=12dfc556" />
+    <script src="_static/documentation_options.js?v=945aedf1"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/translations.js?v=0173e136"></script>
+    <link rel="index" title="Indice" href="genindex.html" />
+    <link rel="search" title="Cerca" href="search.html" />
+    <link rel="next" title="src.simulation.blocks.ExponentialService module" href="src.simulation.blocks.ExponentialService.html" />
+    <link rel="prev" title="src.simulation.blocks package" href="src.simulation.blocks.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="module-src.simulation.blocks.EndBlock">
+<span id="src-simulation-blocks-endblock-module"></span><h1>src.simulation.blocks.EndBlock module<a class="headerlink" href="#module-src.simulation.blocks.EndBlock" title="Link to this heading">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="src.simulation.blocks.EndBlock.EndBlock">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.simulation.blocks.EndBlock.</span></span><span class="sig-name descname"><span class="pre">EndBlock</span></span><a class="headerlink" href="#src.simulation.blocks.EndBlock.EndBlock" title="Link to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Basi: <code class="xref py py-class docutils literal notranslate"><span class="pre">SimBlockInterface</span></code></p>
+</div></blockquote>
+<p>Blocco finale della simulazione che registra il completamento delle entità.</p>
+<p>Gestisce la raccolta e formattazione dei risultati della simulazione sia in formato
+testuale che JSON per l’analisi dei dati.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="src.simulation.blocks.EndBlock.EndBlock.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#src.simulation.blocks.EndBlock.EndBlock.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Inizializza il blocco finale con array per log testuale e JSON.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.simulation.blocks.EndBlock.EndBlock.clear_output_log">
+<span class="sig-name descname"><span class="pre">clear_output_log</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#src.simulation.blocks.EndBlock.EndBlock.clear_output_log" title="Link to this definition">¶</a></dt>
+<dd><p>Svuota sia i log testuali che JSON.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.simulation.blocks.EndBlock.EndBlock.get_json_data">
+<span class="sig-name descname"><span class="pre">get_json_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#src.simulation.blocks.EndBlock.EndBlock.get_json_data" title="Link to this definition">¶</a></dt>
+<dd><p>Restituisce i dati JSON raccolti.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Ritorna<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Lista dei dati JSON delle persone processate.</p>
+</dd>
+<dt class="field-even">Tipo di ritorno<span class="colon">:</span></dt>
+<dd class="field-even"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.simulation.blocks.EndBlock.EndBlock.putInQueue">
+<span class="sig-name descname"><span class="pre">putInQueue</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="src.models.person.html#src.models.person.Person" title="src.models.person.Person"><span class="pre">Person</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">timestamp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">datetime</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="src.simulation.Event.html#src.simulation.Event.Event" title="src.simulation.Event.Event"><span class="pre">Event</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#src.simulation.blocks.EndBlock.EndBlock.putInQueue" title="Link to this definition">¶</a></dt>
+<dd><p>Elabora una persona che completa la simulazione.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parametri<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>person</strong> – La persona che ha completato la simulazione.</p></li>
+<li><p><strong>timestamp</strong> – Il timestamp di completamento.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Ritorna<span class="colon">:</span></dt>
+<dd class="field-even"><p>Lista vuota (blocco finale).</p>
+</dd>
+<dt class="field-odd">Tipo di ritorno<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list[<a class="reference internal" href="src.simulation.Event.html#src.simulation.Event.Event" title="src.simulation.Event.Event">Event</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.simulation.blocks.EndBlock.EndBlock.write_all_outputs">
+<span class="sig-name descname"><span class="pre">write_all_outputs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text_filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'simulation_results.txt'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">json_filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'simulation_results.json'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.simulation.blocks.EndBlock.EndBlock.write_all_outputs" title="Link to this definition">¶</a></dt>
+<dd><p>Scrive sia l’output testuale che i dati JSON.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parametri<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>text_filename</strong> (<em>str</em>) – Nome del file di testo.</p></li>
+<li><p><strong>json_filename</strong> (<em>str</em>) – Nome del file JSON.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.simulation.blocks.EndBlock.EndBlock.write_json_to_file">
+<span class="sig-name descname"><span class="pre">write_json_to_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'simulation_results.json'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.simulation.blocks.EndBlock.EndBlock.write_json_to_file" title="Link to this definition">¶</a></dt>
+<dd><p>Scrive tutti i dati JSON in un file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parametri<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>filename</strong> (<em>str</em>) – Nome del file JSON. Default: «simulation_results.json»</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.simulation.blocks.EndBlock.EndBlock.write_output_to_file">
+<span class="sig-name descname"><span class="pre">write_output_to_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'simulation_results.txt'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.simulation.blocks.EndBlock.EndBlock.write_output_to_file" title="Link to this definition">¶</a></dt>
+<dd><p>Scrive tutto l’output raccolto in un file di testo.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parametri<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>filename</strong> (<em>str</em>) – Nome del file di output. Default: «simulation_results.txt»</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">pm</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigazione</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">src</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="src.html">src package</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="modules.html">src</a><ul>
+  <li><a href="src.html">src package</a><ul>
+  <li><a href="src.simulation.html">src.simulation package</a><ul>
+  <li><a href="src.simulation.blocks.html">src.simulation.blocks package</a><ul>
+      <li>Previous: <a href="src.simulation.blocks.html" title="capitolo precedente">src.simulation.blocks package</a></li>
+      <li>Next: <a href="src.simulation.blocks.ExponentialService.html" title="capitolo successivo">src.simulation.blocks.ExponentialService module</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Ricerca veloce</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Vai" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, bo.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="_sources/src.simulation.blocks.EndBlock.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

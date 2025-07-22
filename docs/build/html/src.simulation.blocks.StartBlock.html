@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+
+<html lang="it" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>src.simulation.blocks.StartBlock module &#8212; pm 1.0 documentazione</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=12dfc556" />
+    <script src="_static/documentation_options.js?v=945aedf1"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/translations.js?v=0173e136"></script>
+    <link rel="index" title="Indice" href="genindex.html" />
+    <link rel="search" title="Cerca" href="search.html" />
+    <link rel="next" title="src.simulation.states package" href="src.simulation.states.html" />
+    <link rel="prev" title="src.simulation.blocks.ExponentialService module" href="src.simulation.blocks.ExponentialService.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="module-src.simulation.blocks.StartBlock">
+<span id="src-simulation-blocks-startblock-module"></span><h1>src.simulation.blocks.StartBlock module<a class="headerlink" href="#module-src.simulation.blocks.StartBlock" title="Link to this heading">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="src.simulation.blocks.StartBlock.StartBlock">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.simulation.blocks.StartBlock.</span></span><span class="sig-name descname"><span class="pre">StartBlock</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rate</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nextBlock</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="src.interfaces.SimBlockInterface.html#src.interfaces.SimBlockInterface.SimBlockInterface" title="src.interfaces.SimBlockInterface.SimBlockInterface"><span class="pre">SimBlockInterface</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_timestamp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">datetime</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">toSim</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.simulation.blocks.StartBlock.StartBlock" title="Link to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Basi: <code class="xref py py-class docutils literal notranslate"><span class="pre">SimBlockInterface</span></code></p>
+</div></blockquote>
+<p>Rappresenta un blocco di partenza che genera persone con un tempo di servizio esponenziale.
+Questo blocco inizia la simulazione generando una persona e avviando il processo di creazione degli utenti.
+Per ora è molto semplice, genero un numero di persone pari al numero di eventi che voglio generare.
+Il tasso di servizio è costante e il blocco successivo è specificato al momento della creazione.
+Ogni volta che viene generato un utente si crea un evento per generaere il successivo.
+TODO: naturalemnte questo l’ho creato solo per testare inizialmente, quindi è da cambiare.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="src.simulation.blocks.StartBlock.StartBlock.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rate</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nextBlock</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="src.interfaces.SimBlockInterface.html#src.interfaces.SimBlockInterface.SimBlockInterface" title="src.interfaces.SimBlockInterface.SimBlockInterface"><span class="pre">SimBlockInterface</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_timestamp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">datetime</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">toSim</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.simulation.blocks.StartBlock.StartBlock.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Inizializza un nuovo blocco di partenza.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parametri<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – Il nome del blocco di partenza.</p></li>
+<li><p><strong>rate</strong> (<em>float</em>) – Il tasso di servizio, che determina la media del tempo di servizio.</p></li>
+<li><p><strong>nextBlock</strong> (<a class="reference internal" href="src.interfaces.SimBlockInterface.html#src.interfaces.SimBlockInterface.SimBlockInterface" title="src.interfaces.SimBlockInterface.SimBlockInterface"><em>SimBlockInterface</em></a>) – Il blocco successivo nella catena di servizi.</p></li>
+<li><p><strong>start_timestamp</strong> (<em>datetime</em>) – Il timestamp di inizio della simulazione.</p></li>
+<li><p><strong>toSim</strong> (<em>int</em>) – Il numero di persone da generare nella simulazione.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.simulation.blocks.StartBlock.StartBlock.getServiceTime">
+<span class="sig-name descname"><span class="pre">getServiceTime</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">datetime</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">datetime</span></span></span><a class="headerlink" href="#src.simulation.blocks.StartBlock.StartBlock.getServiceTime" title="Link to this definition">¶</a></dt>
+<dd><p>Calcola il tempo di servizio esponenziale a partire da un timestamp specificato.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parametri<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>time</strong> (<em>datetime</em>) – Il timestamp di inizio del servizio.</p>
+</dd>
+<dt class="field-even">Ritorna<span class="colon">:</span></dt>
+<dd class="field-even"><p>Il timestamp di fine del servizio, calcolato aggiungendo un tempo esponenziale al timestamp di inizio.</p>
+</dd>
+<dt class="field-odd">Tipo di ritorno<span class="colon">:</span></dt>
+<dd class="field-odd"><p>datetime</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.simulation.blocks.StartBlock.StartBlock.serveNext">
+<span class="sig-name descname"><span class="pre">serveNext</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">[&lt;class</span> <span class="pre">'simulation.Event.Event'&gt;]</span></span></span><a class="headerlink" href="#src.simulation.blocks.StartBlock.StartBlock.serveNext" title="Link to this definition">¶</a></dt>
+<dd><p>Rappresenta l’handler del evento, aggiunge la persona alla coda del primo blocco, e genera il prossimo evento.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Ritorna<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Una lista di eventi da processare, che contiene l’evento di inizio del servizio della prossima persona in coda se presente.</p>
+</dd>
+<dt class="field-even">Tipo di ritorno<span class="colon">:</span></dt>
+<dd class="field-even"><p>list[<a class="reference internal" href="src.simulation.Event.html#src.simulation.Event.Event" title="src.simulation.Event.Event">Event</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.simulation.blocks.StartBlock.StartBlock.start">
+<span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#src.simulation.blocks.StartBlock.StartBlock.start" title="Link to this definition">¶</a></dt>
+<dd><p>Genera una nuova persona e il primo evento da cui parte il sistema.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Ritorna<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Un evento che rappresenta l’inizio del servizio della persona generata.</p>
+</dd>
+<dt class="field-even">Tipo di ritorno<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="src.simulation.Event.html#src.simulation.Event.Event" title="src.simulation.Event.Event">Event</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">pm</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigazione</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">src</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="src.html">src package</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="modules.html">src</a><ul>
+  <li><a href="src.html">src package</a><ul>
+  <li><a href="src.simulation.html">src.simulation package</a><ul>
+  <li><a href="src.simulation.blocks.html">src.simulation.blocks package</a><ul>
+      <li>Previous: <a href="src.simulation.blocks.ExponentialService.html" title="capitolo precedente">src.simulation.blocks.ExponentialService module</a></li>
+      <li>Next: <a href="src.simulation.states.html" title="capitolo successivo">src.simulation.states package</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Ricerca veloce</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Vai" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, bo.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="_sources/src.simulation.blocks.StartBlock.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
