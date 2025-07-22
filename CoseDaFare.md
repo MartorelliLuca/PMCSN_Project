@@ -1,7 +1,5 @@
 # C0S3 D4 F4R3
-
-Sono obbiettivi che ho posto cosi di getto almeno per iniziare a capire lo scoop di quello che dobbiamo fare.
-Naturalente sono da cambiare, rimuovere, aggiungere, arrichire, risistemare.
+Questi sono obiettivi iniziali che ho definito per chiarire meglio l'ambito del progetto. Naturalmente, potranno essere modificati, rimossi, aggiunti, arricchiti o riorganizzati in base alle esigenze future.
 
 ## Test
 - [ ] Non completato
