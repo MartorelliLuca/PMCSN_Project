@@ -11,6 +11,7 @@ class Person:
     def __init__(self, ID):
         """Inizializza una nuova persona con un ID univoco.(pero non è obbligatorio renderlo univico)"""
         self.states=[]
+        self.login_time=0
         self.ID = ID
         
     def append_state(self, state):

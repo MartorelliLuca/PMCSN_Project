@@ -9,6 +9,9 @@ from simulation.blocks.EndBlock import EndBlock
 from simulation.blocks.ExponentialService import ExponentialService
 from simulation.blocks.StartBlock import StartBlock
 
+from simulation.blocks.Autenticazione import Autenticazione
+from simulation.blocks.Instradamento import Instradamento
+
 class SimulationEngine:
     """Gestisce l'esecuzione della simulazione, orchestrando i blocchi di servizio e gli eventi.
     Inizializza i blocchi di partenza e di fine, gestisce la coda degli eventi e processa gli eventi in ordine temporale.
@@ -23,14 +26,11 @@ class SimulationEngine:
         persons = []
         start_timestamp= datetime(2023, 10, 1, 0, 0, 0) #inio della simulazione
         times=[]
-        # --------------------- inizio costruzione blocchi ---------------------
-        # Crea il blocco finale che raccoglie i risultati della simulazione.
-        endBlock = EndBlock()
-        # Crea il blocco di servizio esponenziale che gestisce il tempo di servizio delle persone.
-        exponentialService = ExponentialService("ExponentialService", 5, endBlock)
-        # Crea il blocco di partenza che genera le persone e avvia il processo di simulazione.
-        startingBlock = StartBlock("StartingBlock", 2, exponentialService, start_timestamp, toSIm)
-        # --------------------- fine costruzione blocchi ---------------------
+        endBlock = EndBlock()    
+        autenticazione  = Autenticazione("Autenticazione", 0.4, 0.3, endBlock)
+        instradamento = Instradamento("Instradamento", 0.5, autenticazione)
+        startingBlock = StartBlock("StartingBlock", 0.5, instradamento, start_timestamp, toSIm) 
+        autenticazione.setInstradamento(instradamento)
         # Aggiungo il primo evento alla coda per iniziare la simulazione.
         startingEvent = startingBlock.start()
         self.event_queue.push(startingEvent)

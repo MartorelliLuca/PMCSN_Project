@@ -30,7 +30,7 @@ class EndBlock(SimBlockInterface):
             "start_timestamp": datetime.now().isoformat(),
             "format": "json_lines"
         }
-        self.file_handle.write(json.dumps(metadata) + '\n')
+        self.file_handle.write(json.dumps(metadata, indent=2) + '\n')
         self.file_handle.flush()
 
     def putInQueue(self, person: Person, timestamp: datetime) -> list[Event]:
@@ -60,7 +60,7 @@ class EndBlock(SimBlockInterface):
         }
         
         # Write immediately (streaming)
-        self.file_handle.write(json.dumps(person_data) + '\n')
+        self.file_handle.write(json.dumps(person_data, indent=2) + '\n')
         self.total_processed += 1
         
         # Periodic flush and progress
@@ -79,7 +79,7 @@ class EndBlock(SimBlockInterface):
             "total_entities_processed": self.total_processed,
             "simulation_complete": True
         }
-        self.file_handle.write(json.dumps(final_metadata) + '\n')
+        self.file_handle.write(json.dumps(final_metadata, indent=2) + '\n')
         self.file_handle.close()
         
         print(f"✅ Simulation finalized: {self.total_processed} entities processed")
