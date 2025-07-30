@@ -8,9 +8,9 @@ __pycache__/
 *.pyo
 *.pyd
 .Python
-build/
 develop-eggs/
 dist/
+
 downloads/
 eggs/
 .eggs/
@@ -54,3 +54,4 @@ venv.bak/
 .Trashes
 ehthumbs.db
 Thumbs.db
+simulation_results.*

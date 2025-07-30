@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+
+<html lang="it" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>simulation.blocks.ExponentialService module &#8212; pm 1.0 documentazione</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=12dfc556" />
+    <script src="_static/documentation_options.js?v=945aedf1"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/translations.js?v=0173e136"></script>
+    <link rel="index" title="Indice" href="genindex.html" />
+    <link rel="search" title="Cerca" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="module-simulation.blocks.ExponentialService">
+<span id="simulation-blocks-exponentialservice-module"></span><h1>simulation.blocks.ExponentialService module<a class="headerlink" href="#module-simulation.blocks.ExponentialService" title="Link to this heading">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="simulation.blocks.ExponentialService.ExponentialService">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simulation.blocks.ExponentialService.</span></span><span class="sig-name descname"><span class="pre">ExponentialService</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rate</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nextBlock</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="src.interfaces.SimBlockInterface.html#src.interfaces.SimBlockInterface.SimBlockInterface" title="src.interfaces.SimBlockInterface.SimBlockInterface"><span class="pre">SimBlockInterface</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simulation.blocks.ExponentialService.ExponentialService" title="Link to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Basi: <code class="xref py py-class docutils literal notranslate"><span class="pre">SimBlockInterface</span></code></p>
+</div></blockquote>
+<p>Rappresenta un blocco di servizio che utilizza un tempo di servizio esponenziale.
+Questo blocco gestisce una coda di persone e fornisce un servizio con un tempo di attesa basato su una distribuzione esponenziale.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="simulation.blocks.ExponentialService.ExponentialService.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rate</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nextBlock</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="src.interfaces.SimBlockInterface.html#src.interfaces.SimBlockInterface.SimBlockInterface" title="src.interfaces.SimBlockInterface.SimBlockInterface"><span class="pre">SimBlockInterface</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simulation.blocks.ExponentialService.ExponentialService.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Inizializza un nuovo blocco di servizio esponenziale.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parametri<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – Il nome del blocco di servizio.</p></li>
+<li><p><strong>rate</strong> (<em>float</em>) – Il tasso di servizio, che determina la media del tempo di servizio.</p></li>
+<li><p><strong>nextBlock</strong> (<a class="reference internal" href="src.interfaces.SimBlockInterface.html#src.interfaces.SimBlockInterface.SimBlockInterface" title="src.interfaces.SimBlockInterface.SimBlockInterface"><em>SimBlockInterface</em></a>) – Il blocco successivo nella catena di servizi.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simulation.blocks.ExponentialService.ExponentialService.getServiceTime">
+<span class="sig-name descname"><span class="pre">getServiceTime</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">datetime</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">datetime</span></span></span><a class="headerlink" href="#simulation.blocks.ExponentialService.ExponentialService.getServiceTime" title="Link to this definition">¶</a></dt>
+<dd><p>Calcola il tempo di servizio esponenziale a partire da un timestamp specificato.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parametri<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>time</strong> (<em>datetime</em>) – Il timestamp di inizio del servizio.</p>
+</dd>
+<dt class="field-even">Ritorna<span class="colon">:</span></dt>
+<dd class="field-even"><p>Il timestamp di fine del servizio, calcolato aggiungendo un tempo esponenziale al timestamp di inizio.</p>
+</dd>
+<dt class="field-odd">Tipo di ritorno<span class="colon">:</span></dt>
+<dd class="field-odd"><p>datetime</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simulation.blocks.ExponentialService.ExponentialService.get_rate">
+<span class="sig-name descname"><span class="pre">get_rate</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#simulation.blocks.ExponentialService.ExponentialService.get_rate" title="Link to this definition">¶</a></dt>
+<dd><p>Restituisce il tasso di servizio.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Ritorna<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Il tasso di servizio, che determina la media del tempo di servizio.</p>
+</dd>
+<dt class="field-even">Tipo di ritorno<span class="colon">:</span></dt>
+<dd class="field-even"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simulation.blocks.ExponentialService.ExponentialService.get_service_name">
+<span class="sig-name descname"><span class="pre">get_service_name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#simulation.blocks.ExponentialService.ExponentialService.get_service_name" title="Link to this definition">¶</a></dt>
+<dd><p>Restituisce il nome del servizio.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Ritorna<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Il nome del servizio associato a questo blocco.</p>
+</dd>
+<dt class="field-even">Tipo di ritorno<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simulation.blocks.ExponentialService.ExponentialService.putInQueue">
+<span class="sig-name descname"><span class="pre">putInQueue</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="src.models.person.html#src.models.person.Person" title="src.models.person.Person"><span class="pre">Person</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">timestamp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">datetime</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="src.simulation.Event.html#src.simulation.Event.Event" title="src.simulation.Event.Event"><span class="pre">Event</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#simulation.blocks.ExponentialService.ExponentialService.putInQueue" title="Link to this definition">¶</a></dt>
+<dd><p>Aggiunge una persona alla coda del blocco di servizio.
+Se il blocco è vuoto, inizia il servizio immediatamente, chiamando putNextState e creando quindi un evento.
+se la cosa è piena, la persona viene semplicemente aggiunta alla coda, e non si crea nessun evento.
+Inoltre per ogni persona aggiunta alla coda, viene creato un NormalState che rappresenta lo stato della persona nella coda.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parametri<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>person</strong> (<a class="reference internal" href="src.models.person.html#src.models.person.Person" title="src.models.person.Person"><em>Person</em></a>) – La persona da aggiungere alla coda.</p></li>
+<li><p><strong>timestamp</strong> (<em>datetime</em>) – Il timestamp in cui la persona entra nella coda.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Ritorna<span class="colon">:</span></dt>
+<dd class="field-even"><p>Una lista di eventi da processare, vuota se non ci sono eventi da gestire.</p>
+</dd>
+<dt class="field-odd">Tipo di ritorno<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list[<a class="reference internal" href="src.simulation.Event.html#src.simulation.Event.Event" title="src.simulation.Event.Event">Event</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simulation.blocks.ExponentialService.ExponentialService.putNextEvenet">
+<span class="sig-name descname"><span class="pre">putNextEvenet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">exitQueueTime</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="src.simulation.Event.html#src.simulation.Event.Event" title="src.simulation.Event.Event"><span class="pre">Event</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#simulation.blocks.ExponentialService.ExponentialService.putNextEvenet" title="Link to this definition">¶</a></dt>
+<dd><p>Controlla se ci sono persone in coda e, se il blocco di servizio è vuoto, inizia il servizio della prima persona in coda.
+Se il blocco è vuoto, crea un evento che rappresenta l’inizio del servizio della persona in coda.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parametri<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>exitQueueTime</strong> (<em>datetime</em>) – Il timestamp in cui la persona esce dalla coda.</p>
+</dd>
+<dt class="field-even">Ritorna<span class="colon">:</span></dt>
+<dd class="field-even"><p>Una lista di eventi da processare, che contiene l’evento di inizio del servizio se il blocco era vuoto.</p>
+</dd>
+<dt class="field-odd">Tipo di ritorno<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list[<a class="reference internal" href="src.simulation.Event.html#src.simulation.Event.Event" title="src.simulation.Event.Event">Event</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simulation.blocks.ExponentialService.ExponentialService.serveNext">
+<span class="sig-name descname"><span class="pre">serveNext</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="src.simulation.Event.html#src.simulation.Event.Event" title="src.simulation.Event.Event"><span class="pre">Event</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#simulation.blocks.ExponentialService.ExponentialService.serveNext" title="Link to this definition">¶</a></dt>
+<dd><p>Gestisce il completamento del servizio della persona attualmente in lavorazione.
+Se ci sono persone in coda, crea un evento per la prossima persona da elaborare.
+Se ha elaborato qualcuno lo passa al blocco successivo e se riceve un evento lo aggiunge alla lista degli eventi da ritornare.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Ritorna<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Una lista di eventi da processare, che contiene l’evento di inizio del servizio della prossima persona in coda se presente.</p>
+</dd>
+<dt class="field-even">Tipo di ritorno<span class="colon">:</span></dt>
+<dd class="field-even"><p>list[<a class="reference internal" href="src.simulation.Event.html#src.simulation.Event.Event" title="src.simulation.Event.Event">Event</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">pm</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigazione</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">src</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Ricerca veloce</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Vai" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, bo.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="_sources/simulation.blocks.ExponentialService.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

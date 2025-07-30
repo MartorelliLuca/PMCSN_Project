@@ -1,30 +1,36 @@
 import models.request as Request
 
+
+
+
 class Person:
-    def __init__(self, ID, entry, creation_time):
-        self.entry = entry
-        self.creation_time = creation_time
-        self.ID = ID
-        self.destr_time = None
-        self.request = None
+    """Rappresenta una persona/entità nella simulazione.
     
-    def generateRequest(self):
-        self.request = Request(self.ID, self.creation_time)
-        return self.request
+    Mantiene una lista degli stati attraversati durante la simulazione.
+    """
+    def __init__(self, ID):
+        """Inizializza una nuova persona con un ID univoco.(pero non è obbligatorio renderlo univico)"""
+        self.states=[]
+        self.login_time=0
+        self.ID = ID
+        
+    def append_state(self, state):
+        """Aggiunge un nuovo stato alla lista degli stati facendo una append."""
+        self.states.append(state)
 
-    def getCreationTime(self):
-        return self.creation_time
+    def get_last_state(self):
+        """Restituisce l'ultimo stato o None se la lista è vuota."""
+        if self.states:
+            return self.states[-1]
+        return None
+    
+    def set_last_state(self, state):
+        """Sostituisce l'ultimo stato o lo aggiunge se la lista è vuota."""
+        if self.states:
+            self.states[-1] = state
+        else:
+            self.append_state(state)
 
-    def getID(self):
-        return self.ID
-
-    def getEntry(self):
-        return self.entry
-
-    def getDestrTime(self):
-        return self.destr_time
-
-    def setDestrTime(self, destr_time):
-        self.destr_time = destr_time
+    
 
     
