@@ -27,9 +27,9 @@ class SimulationEngine:
         start_timestamp= datetime(2023, 10, 1, 0, 0, 0) #inio della simulazione
         times=[]
         endBlock = EndBlock()    
-        autenticazione  = Autenticazione("Autenticazione", 0.4, 0.3, endBlock)
-        instradamento = Instradamento("Instradamento", 0.5, autenticazione)
-        startingBlock = StartBlock("StartingBlock", 0.5, instradamento, start_timestamp, toSIm) 
+        autenticazione  = Autenticazione("Autenticazione", 4, 0.3, endBlock)
+        instradamento = Instradamento("Instradamento", 6.25, autenticazione)
+        startingBlock = StartBlock("StartingBlock", 5, instradamento, start_timestamp, toSIm) 
         autenticazione.setInstradamento(instradamento)
         # Aggiungo il primo evento alla coda per iniziare la simulazione.
         startingEvent = startingBlock.start()

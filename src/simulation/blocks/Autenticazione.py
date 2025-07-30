@@ -27,7 +27,7 @@ class Autenticazione(SimBlockInterface):
     def getServiceTime(self,time:datetime)->datetime:
       
         exp= rvgs.Exponential(1/self.serviceRate)
-        return time + timedelta(seconds=exp)
+        return time #+ timedelta(seconds=exp)
     
 
 
