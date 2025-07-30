@@ -7,13 +7,13 @@ from desPython import rvgs
 from datetime import timedelta
 
 
-class Autenticazione(SimBlockInterface):
+class InEsame(SimBlockInterface):
     
-    def __init__(self, name, serviceRate,loginRate, nextBlock:SimBlockInterface):
+    def __init__(self, name, serviceRate,humanDelay, nextBlock:SimBlockInterface):
        
         self.name = name
         self.serviceRate = serviceRate
-        self.loginRate = loginRate
+        self.humanDelay = humanDelay
         self.queueLenght = 0
         self.queue=[]
         self.working=None
@@ -31,9 +31,9 @@ class Autenticazione(SimBlockInterface):
     
 
 
-    def get_login_sucess(self,p)->datetime:
+    def getRichiestaSuccesso(self,p)->datetime:
         n=rvgs.Uniform(0,1)
-        if n < 0.3:
+        if n < 0.7:
             return False
         return True
     def get_service_name(self) -> str:
@@ -44,21 +44,20 @@ class Autenticazione(SimBlockInterface):
       
         return self.serviceRate    
     
-    def getLoginTime(self,time:datetime)->datetime:
+    def getRitardoUmano(self,time:datetime)->datetime:
 
-        exp= rvgs.Exponential(1/self.loginRate)
+        exp= rvgs.Exponential(1/self.humanDelay)
         return time + timedelta(seconds=exp)
 
 
     def putInQueue(self,person: Person,timestamp: datetime) ->list[Event]:
-        tempoAfterLogin = self.getLoginTime(timestamp)
-        person.login_time += (timestamp - tempoAfterLogin).total_seconds()
-        state=NormalState(self.name, tempoAfterLogin, self.queueLenght)
+        tempoAfterElaborazioneUmana = self.getRitardoUmano(timestamp)
+        state=NormalState(self.name, tempoAfterElaborazioneUmana, self.queueLenght)
         self.queueLenght += 1
         self.queue.append(person)
         person.append_state(state)
         if self.working is None:
-            events = self.putNextEvenet(tempoAfterLogin)
+            events = self.putNextEvenet(tempoAfterElaborazioneUmana)
             return events if events else []
         return []
 
@@ -88,8 +87,8 @@ class Autenticazione(SimBlockInterface):
             if event:
                 events.extend(event)
 
-        login_sucess = self.get_login_sucess(serving)
-        if login_sucess:
+        success = self.getRichiestaSuccesso(serving)
+        if success:
             event=self.nextBlock.putInQueue(serving, endTime)
         else:
             event=self.instradamento.putInQueue(serving, endTime)

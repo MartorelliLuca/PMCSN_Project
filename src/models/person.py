@@ -12,6 +12,9 @@ class Person:
         """Inizializza una nuova persona con un ID univoco.(pero non è obbligatorio renderlo univico)"""
         self.states=[]
         self.login_time=0
+        self.request_compilation_time=0
+        self.request_refused=0
+        self.login_failed=0
         self.ID = ID
         
     def append_state(self, state):
