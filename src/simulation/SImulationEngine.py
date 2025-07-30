@@ -2,7 +2,7 @@ from desPython import rng,rngs,rvgs
 from simulation.states.NormalState import NormalState
 from simulation.EventQueue import EventQueue
 from models.person import Person
-from datetime import datetime
+from datetime import datetime, date
 from datetime import timedelta
 
 from simulation.blocks.EndBlock import EndBlock
@@ -20,8 +20,8 @@ class SimulationEngine:
     Inizializza i blocchi di partenza e di fine, gestisce la coda degli eventi e processa gli eventi in ordine temporale.
     """
 
-
-    def generateArrivalsRates() -> list[float]:
+    
+    def generateArrivalsRates(self) -> list[float]:
         """Genera un array di tassi medi di arrivo per ogni giorno tra 1 maggio e 30 settembre (inclusi).
 
         Returns:
@@ -33,12 +33,12 @@ class SimulationEngine:
         delta = (end - start).days + 1  # incluso l'ultimo giorno
 
         # Genera tassi casuali (es: esponenziale con media 5 secondi)
-        rates = [rvgs.Exponential(5.0) for _ in range(delta)]
+        rates = [rvgs.Uniform(0.001,0.005) for _ in range(delta)]
         return rates
 
     
 
-    def test(self):
+    def test(self, toSim):
         """Inizializza il motore di simulazione con i blocchi di partenza e fine.
         
         Args:
@@ -56,7 +56,8 @@ class SimulationEngine:
         evasione = Evasione("Evasione", 0.1,0.1, inEsame)
         autenticazione  = Autenticazione("Autenticazione", 4, 0.3, evasione)
         instradamento = Instradamento("Instradamento", 6.25, autenticazione)
-        startingBlock = StartBlock("Start", nextBlock=..., start_timestamp=datetime(2025, 5, 1, 0, 0), daily_rates=daily_rates)
+        startingBlock = StartBlock("Start", nextBlock=instradamento, start_timestamp=datetime(2025, 5, 1, 0, 0), daily_rates=daily_rates)
+        
         autenticazione.setInstradamento(instradamento)
         inEsame.setInstradamento(instradamento)
         # Aggiungo il primo evento alla coda per iniziare la simulazione.

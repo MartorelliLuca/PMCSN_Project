@@ -33,7 +33,7 @@ class InEsame(SimBlockInterface):
 
     def getRichiestaSuccesso(self,p)->datetime:
         n=rvgs.Uniform(0,1)
-        if n < 0.7:
+        if n < 0.3:
             return False
         return True
     def get_service_name(self) -> str:

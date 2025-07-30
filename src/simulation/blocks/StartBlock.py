@@ -28,9 +28,9 @@ class StartBlock(SimBlockInterface):
         self.next = None
         self.generated = 0
         self.nextBlock = nextBlock
-        self.start_timestamp = start_timestamp                    # timestamp iniziale della simulazione
+        self.start_timestamp = datetime(2025,5,1,0,0,0)                    # timestamp iniziale della simulazione
         self.current_time = start_timestamp                       # tempo corrente nella simulazione
-        self.end_timestamp = datetime(2025, 9, 30, 23, 59, 59)    # tempo finale della simulazione (30 settembre incluso)
+        self.end_timestamp = datetime(2025, 5, 3,0,0,0)    # tempo finale della simulazione (30 settembre incluso)
         self.daily_rates = daily_rates                            # array di tassi medi giornalieri
 
     def getServiceTime(self, time: datetime) -> datetime:
@@ -58,7 +58,7 @@ class StartBlock(SimBlockInterface):
         Returns:
             float: Il tasso di arrivo giornaliero corrispondente a quella data.
         """
-        base_date = datetime(2025, 5, 1)
+        base_date = self.start_timestamp
         index = (date_obj.date() - base_date.date()).days
         if 0 <= index < len(self.daily_rates):
             return self.daily_rates[index]

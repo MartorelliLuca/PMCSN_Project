@@ -35,12 +35,3 @@ Questi sono obiettivi iniziali che ho definito per chiarire meglio l'ambito del 
 (non serve in verita niente di tutto questo, ma per non lasciare la sezione vuota ora ho aggiunto qualcosa)
 - [ ] Scrivere la documentazione utente e sviluppatore.
 - [ ] Generare la documentazione API aggiornata con Sphinx.
-
-
-
-_____________________________________________________________
-
-Modificare sta cosa del tasso di arrivo in modo che sia dinamico:
-- inizia con array di mesi
-- creare un array di dimensione dei giorni da simulare.
-- quando genero l'utente guardo la data di generazione, se siamo quando genero in start

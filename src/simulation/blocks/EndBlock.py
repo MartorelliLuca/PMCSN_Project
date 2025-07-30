@@ -32,8 +32,13 @@ class EndBlock(SimBlockInterface):
         }
         self.file_handle.write(json.dumps(metadata, indent=2) + '\n')
         self.file_handle.flush()
+        self.results=[]
+        self.workingDate=None
 
     def putInQueue(self, person: Person, timestamp: datetime) -> list[Event]:
+#chiamarlo quando qualcosa esce dal sistema
+#inizializzo vettore di result nel costruttore
+
         """Elabora una persona che completa la simulazione.
         
         Args:
@@ -42,6 +47,11 @@ class EndBlock(SimBlockInterface):
             
         Returns:
             list[Event]: Lista vuota (blocco finale).
+        """
+        """
+        conservare i risultati del giorno attuale,
+        quando viene data una persona del giorno successivo, elaborare i risultati del giorno precedente
+        salvarli in formato json, e impostrare results=[] e cambiare workingDate
         """
         state = NormalState("EndBlock", timestamp, 0)
         person.append_state(state)
