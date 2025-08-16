@@ -9,7 +9,8 @@ from simulation.blocks.EndBlock import EndBlock
 from simulation.blocks.ExponentialService import ExponentialService
 from simulation.blocks.StartBlock import StartBlock
 from simulation.blocks.StartVecchio import StartVecchio 
-from simulation.blocks.Evasione import Evasione
+from simulation.blocks.AccettazioneDiretta import AccettazioneDiretta
+from simulation.blocks.Compilazione import Compilazione
 from simulation.blocks.InEsame import InEsame
 
 from simulation.blocks.Autenticazione import Autenticazione
@@ -38,29 +39,43 @@ class SimulationEngine:
 
     
 
-    def test(self, toSim):
+    def buildBlocks(self):
+        endBlock = EndBlock()  
+        inEsame = InEsame("InEsame", 2, 300, 10000, 0.5)
+        compilazione=Compilazione("Evasione", 1, 600, 14400, 0.1)
+        diretta=AccettazioneDiretta(name="AccettazioneDiretta",mean=180, variance=3600)
+        instradamento = Instradamento(name="Instradamento", rate=6.25,multiServiceRate=5,queueMaxLenght=50)
+        autenticazione = Autenticazione(name="Autenticazione", serviceRate=4.0,multiServiceRate=3,successProbability=0.9,compilazionePrecompilataProbability=0.3)
+
+        inEsame.setInstradamento(instradamento)
+        autenticazione.setInstradamento(instradamento)
+        autenticazione.setCompilazione(compilazione)
+        autenticazione.setAccettazioneDiretta(diretta)
+        compilazione.setNextBlock(inEsame)
+        diretta.setNextBlock(inEsame)
+        inEsame.setEnd(endBlock)
+        return instradamento, autenticazione, compilazione, diretta, inEsame,endBlock
+
+    def normale(self):
         """Inizializza il motore di simulazione con i blocchi di partenza e fine.
         
         Args:
             toSIm (int): Numero di persone da generare nella simulazione.
         """
         self.event_queue = EventQueue()
-        persons = []
-        start_timestamp= datetime(2023, 10, 1, 0, 0, 0) #inio della simulazione
-        times=[]
-        endBlock = EndBlock()    
-        inEsame = InEsame("InEsame", 2, 0.5, endBlock)
+       
+        instradamento, autenticazione, compilazione, diretta, inEsame,endBlock=self.buildBlocks()
+
+
+
+
         daily_rates = self.generateArrivalsRates()
 
 
-        evasione = Evasione("Evasione", 0.1,0.1, inEsame)
-        autenticazione  = Autenticazione("Autenticazione", 4, 0.3, evasione)
-        instradamento = Instradamento("Instradamento", 6.25, autenticazione)
+        
         startingBlock = StartBlock("Start", nextBlock=instradamento, start_timestamp=datetime(2025, 5, 1, 0, 0), daily_rates=daily_rates)
         
-        autenticazione.setInstradamento(instradamento)
-        inEsame.setInstradamento(instradamento)
-        # Aggiungo il primo evento alla coda per iniziare la simulazione.
+    
         startingEvent = startingBlock.start()
         self.event_queue.push(startingEvent)
         #Simulo fino alla fine
@@ -69,51 +84,16 @@ class SimulationEngine:
             event=event[0] if isinstance(event, list) else event
             #print(f"Processing event: {event}","timestamp:", event.timestamp, "serviceName:", event.serviceName, "person:", event.person.ID, "eventType:", event.eventType)
             if event.handler:
-                new_events = event.handler()
+                print(f"Processing event: {event.timestamp} - {event.serviceName} - {event.person.ID} - {event.eventType}  - {event.handler}.{event.handler.__name__} - {event.handler.__self__.__class__.__name__ if hasattr(event.handler, '__self__') else 'N/A'}")
+                new_events = event.handler(None)
                 if new_events:
                     for new_event in new_events:
-                        self.event_queue.push(new_event)
+                        if isinstance(new_event,datetime):
+                            print(f"ciao")
+                            self.event_queue.push(new_event)
         # Scrive i risultati finali in formato testuale e JSON.
         endBlock.finalize()
 
 
-
-
-
-
-    def normal(self, toSIm=10):
-        """Inizializza il motore di simulazione con i blocchi di partenza e fine.
-        
-        Args:
-            toSIm (int): Numero di persone da generare nella simulazione.
-        """
-        self.event_queue = EventQueue()
-        persons = []
-        start_timestamp= datetime(2023, 10, 1, 0, 0, 0) #inio della simulazione
-        times=[]
-        endBlock = EndBlock()    
-        inEsame = InEsame("InEsame", 2, 0.5, endBlock)
-
-        evasione = Evasione("Evasione", 0.1,0.1, inEsame)
-        autenticazione  = Autenticazione("Autenticazione", 4, 0.3, evasione)
-        instradamento = Instradamento("Instradamento", 6.25, autenticazione)
-        startingBlock = StartVecchio("StartingBlock", 5, instradamento, start_timestamp, toSIm) 
-        autenticazione.setInstradamento(instradamento)
-        inEsame.setInstradamento(instradamento)
-        # Aggiungo il primo evento alla coda per iniziare la simulazione.
-        startingEvent = startingBlock.start()
-        self.event_queue.push(startingEvent)
-        #Simulo fino alla fine
-        while not self.event_queue.is_empty():
-            event = self.event_queue.pop()
-            event=event[0] if isinstance(event, list) else event
-            #print(f"Processing event: {event}","timestamp:", event.timestamp, "serviceName:", event.serviceName, "person:", event.person.ID, "eventType:", event.eventType)
-            if event.handler:
-                new_events = event.handler()
-                if new_events:
-                    for new_event in new_events:
-                        self.event_queue.push(new_event)
-        # Scrive i risultati finali in formato testuale e JSON.
-        endBlock.finalize()
 
 

@@ -5,64 +5,81 @@ from simulation.Event import Event
 from simulation.states.NormalState import NormalState
 from desPython import rvgs
 from datetime import timedelta
+import math
 
 
-class Instradamento(SimBlockInterface):
+class AccettazioneDiretta(SimBlockInterface):
     
-    def __init__(self, name, rate,multiServiceRate,queueMaxLenght):
-        
-        self.endBlock = None
+    def __init__(self, name, mean,variance):
        
-        self.queueMaxLenght = queueMaxLenght
         self.name = name
-        self.rate = rate
+        self.mean = mean
+        self.variance = variance
+        self.multiServiceRate=1
         self.queueLenght = 0
         self.queue=[]
         self.working=0
         self.nextBlock = None
-        self.multiServiceRate = multiServiceRate
+        self.lognormal_params = self.calculateParameters()
 
-    def setQueueFullFallBackBlock(self,endBlock:SimBlockInterface):
-        """Imposta il blocco finale da chiamare quando la coda è piena."""
-        self.endBlock = endBlock
 
+        
     def setNextBlock(self,nextBlock:SimBlockInterface):
         """Imposta il blocco successivo da chiamare."""
         self.nextBlock = nextBlock
 
+
+    def calculateParameters(self):
+        """
+        Per una variabile casuale Lognormale(a, b), la media e la varianza sono:
+
+                          media = exp(a + 0.5*b*b)
+                       varianza = (exp(b*b) - 1) * exp(2*a + b*b)
+
+        Per rendere la distribuzione il più deterministica possibile, 
+        si imposta b molto piccolo (vicino a 0) per minimizzare la varianza.
+        """
+
+        # Per una distribuzione quasi deterministica, impostiamo b molto piccolo
+        b = 1e-6  # Valore molto piccolo per minimizzare la varianza
+        
+        # Con b piccolo, a ≈ ln(media)
+        a = math.log(self.mean) - 0.5 * (b ** 2)
+        
+        return [a, b]
+
+
     def getServiceTime(self,time:datetime)->datetime:
-      
-        exp= rvgs.Exponential(1/self.rate)
-        return time + timedelta(seconds=exp)
+        a,b=self.lognormal_params
+        lognormal = rvgs.Lognormal(a, b)
+        return time + timedelta(seconds=lognormal)
     
 
+
+
+    
     def get_service_name(self) -> str:
         
         return self.name
     
     def get_rate(self) -> float:
       
-        return self.rate    
+        return self.serviceRate    
     
-    def putInQueue(self,person: Person,timestamp: datetime) ->list[Event]:
+    
 
+
+    def putInQueue(self,person: Person,timestamp: datetime) ->list[Event]:
         state=NormalState(self.name, timestamp, self.queueLenght)
-        
+        self.queueLenght += 1
         self.queue.append(person)
         person.append_state(state)
-        if self.queueLenght >= self.queueMaxLenght:
-            #TODO fare in modo che il blocco finale si accorga che il l'utente è stato scartato
-            return self.endBlock.putInQueue(person, timestamp)
-
-
-        self.queueLenght += 1
         if self.working < self.multiServiceRate:
             events = self.putNextEvenet(timestamp)
             return events if events else []
         return []
 
     def putNextEvenet(self,exitQueueTime) -> list[Event]:
-
         if len(self.queue) == 0:
             return []
         if self.working < self.multiServiceRate:
@@ -72,13 +89,12 @@ class Instradamento(SimBlockInterface):
                 exitQueueTime = person.get_last_state().enqueue_time
             person.get_last_state().service_start_time = exitQueueTime
             self.queueLenght -= 1
-            person.service_end_time = self.getServiceTime(exitQueueTime)
-            return [Event(person.get_last_state().service_end_time,  self.name,person, f"{self.working-1} pepole where working", self.serveNext)]
+            person.get_last_state().service_end_time = self.getServiceTime(exitQueueTime)
+            return [Event(person.get_last_state().service_end_time,  self.name,person, "queue_empty_put_to_work", self.serveNext)]
         return []
 
     def serveNext(self,person)->list[Event]:
-        assert self.working >= 0, "Working should not be negative"
-        if self.working==0:
+        if self.working == 0:
             return []
         serving=person
         self.working -=1
@@ -87,8 +103,9 @@ class Instradamento(SimBlockInterface):
         if self.queue:
             event = self.putNextEvenet(endTime)
             if event:
-                events.extend(event)
+                events.extend(event)    
         event=self.nextBlock.putInQueue(serving, endTime)
+        
         if event:
             events.extend(event)
         return events

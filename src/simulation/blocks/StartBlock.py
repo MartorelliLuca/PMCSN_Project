@@ -92,7 +92,7 @@ class StartBlock(SimBlockInterface):
 
         return Event(nextServe, self.name, self.next, "generated_event", self.serveNext)
 
-    def serveNext(self) -> [Event]:
+    def serveNext(self,person) -> list[Event]:
         """Rappresenta l'handler dell'evento, aggiunge la persona alla coda del primo blocco, e genera il prossimo evento.
         
         Returns:
@@ -107,14 +107,13 @@ class StartBlock(SimBlockInterface):
         events = []
 
         if self.nextBlock:
+            print(endTime)
             event = self.nextBlock.putInQueue(serving, endTime)
+           
             if event:
                 events.extend(event)
 
-        # Print progress ogni 1000 persone generate
-        if self.generated % 1000 == 0:
-            print(f"[{self.name}] Progress: {self.generated} entities generated")
-
+        
         # Genera il prossimo evento se non abbiamo ancora superato il tempo finale della simulazione
         if self.start_timestamp <= self.end_timestamp:
             new_event = self.start()

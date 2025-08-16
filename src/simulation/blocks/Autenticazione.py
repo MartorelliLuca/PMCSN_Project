@@ -9,16 +9,31 @@ from datetime import timedelta
 
 class Autenticazione(SimBlockInterface):
     
-    def __init__(self, name, serviceRate,loginRate, nextBlock:SimBlockInterface):
-       
+    def __init__(self, name, serviceRate,multiServiceRate,successProbability,compilazionePrecompilataProbability):
+        ''' Remember  to set the following blocks:
+        - accettazioneDiretta
+        - compilazione
+        - instradamento
+        '''
         self.name = name
         self.serviceRate = serviceRate
-        self.loginRate = loginRate
+        self.successProbability = successProbability
         self.queueLenght = 0
         self.queue=[]
-        self.working=None
-        self.nextBlock = nextBlock
+        self.working=0
+        self.compilazione = None
+        self.accettazioneDiretta = None
         self.instradamento = None
+        self.multiServiceRate = multiServiceRate
+        self.compilazionePrecompilataProbability = compilazionePrecompilataProbability
+
+    def setAccettazioneDiretta(self,nextBlock:SimBlockInterface):
+        """Imposta il blocco successivo da chiamare."""
+        self.accettazioneDiretta = nextBlock
+
+    def setCompilazione(self,nextBlock:SimBlockInterface):
+        """Imposta il blocco successivo da chiamare."""
+        self.compilazione = nextBlock
 
     def setInstradamento(self,instradamento:SimBlockInterface):
         """Imposta il blocco di instradamento."""
@@ -30,12 +45,19 @@ class Autenticazione(SimBlockInterface):
         return time + timedelta(seconds=exp)
     
 
-
-    def get_login_sucess(self,p)->datetime:
+    def isPrecompilata(self):
+        """Determina se il modulo è precompilato."""
         n=rvgs.Uniform(0,1)
-        if n < 0.3:
+        if n < self.compilazionePrecompilataProbability:
+            return True
+        return False
+    def get_login_sucess(self):
+        n=rvgs.Uniform(0,1)
+        if n > self.successProbability:
             return False
         return True
+    
+
     def get_service_name(self) -> str:
         
         return self.name
@@ -43,22 +65,15 @@ class Autenticazione(SimBlockInterface):
     def get_rate(self) -> float:
       
         return self.serviceRate    
-    
-    def getLoginTime(self,time:datetime)->datetime:
-
-        exp= rvgs.Exponential(1/self.loginRate)
-        return time + timedelta(seconds=exp)
 
 
     def putInQueue(self,person: Person,timestamp: datetime) ->list[Event]:
-        tempoAfterLogin = self.getLoginTime(timestamp)
-        person.login_time += (timestamp - tempoAfterLogin).total_seconds()
-        state=NormalState(self.name, tempoAfterLogin, self.queueLenght)
+        state=NormalState(self.name, timestamp, self.queueLenght)
         self.queueLenght += 1
         self.queue.append(person)
         person.append_state(state)
-        if self.working is None:
-            events = self.putNextEvenet(tempoAfterLogin)
+        if self.working < self.multiServiceRate:
+            events = self.putNextEvenet(timestamp)
             return events if events else []
         return []
 
@@ -66,21 +81,23 @@ class Autenticazione(SimBlockInterface):
 
         if len(self.queue) == 0:
             return []
-        if self.working is None:
-            self.working=self.queue.pop(0)
-            if self.working.get_last_state().enqueue_time > exitQueueTime:
-                exitQueueTime = self.working.get_last_state().enqueue_time
-            self.working.get_last_state().service_start_time = exitQueueTime
+        if self.working < self.multiServiceRate:
+            self.working += 1
+            person=self.queue.pop(0)
+            if person.get_last_state().enqueue_time > exitQueueTime:
+                exitQueueTime = person.get_last_state().enqueue_time
+            person.get_last_state().service_start_time = exitQueueTime
             self.queueLenght -= 1
-            self.working.get_last_state().service_end_time = self.getServiceTime(exitQueueTime)
-            return [Event(self.working.get_last_state().service_end_time,  self.name,self.working, "queue_empty_put_to_work", self.serveNext)]
+            person.get_last_state().service_end_time = self.getServiceTime(exitQueueTime)
+            return [Event(person.get_last_state().service_end_time,  self.name,person, f"{self.working-1} pepole where working", self.serveNext)]
         return []
 
-    def serveNext(self)->list[Event]:
-        if not self.working:
+    def serveNext(self,person)->list[Event]:
+        assert self.working >= 0, "Working should not be negative"
+        if self.working==0:
             return []
-        serving=self.working
-        self.working = None
+        serving=person
+        self.working -=1
         endTime = serving.get_last_state().service_end_time
         events=[]
         if self.queue:
@@ -89,10 +106,14 @@ class Autenticazione(SimBlockInterface):
                 events.extend(event)
 
         login_sucess = self.get_login_sucess(serving)
-        if login_sucess:
-            event=self.nextBlock.putInQueue(serving, endTime)
-        else:
+        if not login_sucess:
             event=self.instradamento.putInQueue(serving, endTime)
+        else:
+            precompilataSuccess= self.isPrecompilata()
+            if precompilataSuccess:
+                event=self.compilazione.putInQueue(serving, endTime)
+            else:
+                event=self.accettazioneDiretta.putInQueue(serving, endTime)
         if event:
             events.extend(event)
         return events

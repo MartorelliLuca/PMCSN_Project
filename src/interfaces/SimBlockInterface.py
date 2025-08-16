@@ -34,7 +34,7 @@ class SimBlockInterface:
         """
         pass
     
-    def serveNext(self) -> list[Event]:
+    def serveNext(self,person:Person) -> list[Event]:
         """Finisce il servizio della prossima persona.
         
         Returns:
