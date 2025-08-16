@@ -12,10 +12,9 @@ class StartBlock(SimBlockInterface):
     Il tasso di servizio varia di giorno in giorno, secondo un array fornito in input (`daily_rates`).
     Il blocco successivo è specificato al momento della creazione.
     Ogni volta che viene generato un utente si crea un evento per generare il successivo.
-    TODO: naturalemnte questo l'ho creato solo per testare inizialmente, quindi è da cambiare.
     """
 
-    def __init__(self, name, nextBlock: SimBlockInterface, start_timestamp: datetime, daily_rates: list[float]):
+    def __init__(self, name, start_timestamp: datetime, end_timestamp:datetime):
         """Inizializza un nuovo blocco di partenza.
         
         Args:
@@ -27,11 +26,24 @@ class StartBlock(SimBlockInterface):
         self.name = name
         self.next = None
         self.generated = 0
-        self.nextBlock = nextBlock
-        self.start_timestamp = datetime(2025,5,1,0,0,0)                    # timestamp iniziale della simulazione
+        self.nextBlock = None
+        self.start_timestamp = start_timestamp                    # timestamp iniziale della simulazione
         self.current_time = start_timestamp                       # tempo corrente nella simulazione
-        self.end_timestamp = datetime(2025, 5, 3,0,0,0)    # tempo finale della simulazione (30 settembre incluso)
-        self.daily_rates = daily_rates                            # array di tassi medi giornalieri
+        self.end_timestamp = end_timestamp    # tempo finale della simulazione (30 settembre incluso)
+        self.daily_rates = None                            # array di tassi medi giornalieri
+
+    def setDailyRates(self, daily_rates: list[float]):
+        """Imposta i tassi medi giornalieri per la simulazione.
+        
+        Args:
+            daily_rates (list[float]): Lista di tassi medi giornalieri, uno per ciascun giorno della simulazione.
+        """
+        self.daily_rates = daily_rates
+
+    
+    def setNextBlock(self, nextBlock: SimBlockInterface):
+        """Imposta il blocco successivo da chiamare."""
+        self.nextBlock = nextBlock
 
     def getServiceTime(self, time: datetime) -> datetime:
         """Calcola il tempo di servizio esponenziale a partire da un timestamp specificato, usando il tasso giornaliero.
@@ -113,7 +125,7 @@ class StartBlock(SimBlockInterface):
 
         
         # Genera il prossimo evento se non abbiamo ancora superato il tempo finale della simulazione
-        if self.start_timestamp <= self.end_timestamp:
+        if self.current_time <= self.end_timestamp:
             new_event = self.start()
             if new_event:
                 events.append(new_event)

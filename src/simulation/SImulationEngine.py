@@ -8,7 +8,6 @@ from datetime import timedelta
 from simulation.blocks.EndBlock import EndBlock
 from simulation.blocks.ExponentialService import ExponentialService
 from simulation.blocks.StartBlock import StartBlock
-from simulation.blocks.StartVecchio import StartVecchio 
 from simulation.blocks.AccettazioneDiretta import AccettazioneDiretta
 from simulation.blocks.Compilazione import Compilazione
 from simulation.blocks.InEsame import InEsame
@@ -16,39 +15,104 @@ from simulation.blocks.InEsame import InEsame
 from simulation.blocks.Autenticazione import Autenticazione
 from simulation.blocks.Instradamento import Instradamento
 
+from pathlib import Path
+import json
+
+
 class SimulationEngine:
     """Gestisce l'esecuzione della simulazione, orchestrando i blocchi di servizio e gli eventi.
     Inizializza i blocchi di partenza e di fine, gestisce la coda degli eventi e processa gli eventi in ordine temporale.
     """
 
     
-    def generateArrivalsRates(self) -> list[float]:
-        """Genera un array di tassi medi di arrivo per ogni giorno tra 1 maggio e 30 settembre (inclusi).
-
-        Returns:
-            list[float]: Lista di tassi medi, uno per ciascun giorno.
+    def getArrivalsRates(self) -> list[float]:
         """
+        Legge dal file ../../conf/dataset_arrivals.json i valori 'lambda_per_sec'
+        e li restituisce in un array.
+        """
+        conf_path = Path(__file__).resolve().parents[2] / "conf" / "dataset_arrivals.json"
+        if not conf_path.exists():
+            raise FileNotFoundError(f"File non trovato: {conf_path}")
 
-        start = date(2025, 5, 1)
-        end = date(2025, 9, 30)
-        delta = (end - start).days + 1  # incluso l'ultimo giorno
+        with conf_path.open("r", encoding="utf-8") as f:
+            data = json.load(f)
 
-        # Genera tassi casuali (es: esponenziale con media 5 secondi)
-        rates = [rvgs.Uniform(0.001,0.005) for _ in range(delta)]
+        days = data.get("days", [])
+        rates = [float(day["lambda_per_sec"]) for day in days if "lambda_per_sec" in day]
+
         return rates
 
+
+    # Registry: mappa sezione JSON -> (Classe, ordine campi se serve posizionale)
+    _REGISTRY = {
+        "inEsame":        (InEsame,             ("name", "servers", "mean", "variance", "probability")),
+        "compilazione":   (Compilazione,        ("name", "servers", "mean", "variance", "probability")),
+        "diretta":        (AccettazioneDiretta, ("name", "mean", "variance")),
+        "instradamento":  (Instradamento,       ("name", "rate", "multiServiceRate", "queueMaxLenght")),
+        "autenticazione": (Autenticazione,      ("name", "serviceRate", "multiServiceRate", "successProbability", "compilazionePrecompilataProbability")),
+    }
     
+    # Alias di chiavi "scritte meglio" -> "come le vuole il costruttore"
+    _FIELD_ALIASES = {
+        "instradamento": {
+            "queueMaxLength": "queueMaxLenght",  # typo comune
+        }
+    }
+    
+    def _normalize_section(self, data: dict, section_name: str) -> dict:
+        data = dict(data)  # copia difensiva
+        for alias, target in self._FIELD_ALIASES.get(section_name, {}).items():
+            if alias in data and target not in data:
+                data[target] = data.pop(alias)
+        return data
 
+    def _instantiate(self, cfg: dict, key: str):
+        if key not in cfg:
+            raise KeyError(f"Manca la sezione '{key}' nel JSON.")
+
+        cls, fields = self._REGISTRY[key]
+        raw = cfg[key]
+        data = self._normalize_section(raw, key)
+
+        # Check campi mancanti
+        missing = [f for f in fields if f not in data]
+        if missing:
+            raise ValueError(f"Nella sezione '{key}' mancano i campi: {missing}")
+
+        try:
+            return cls(**{f: data[f] for f in fields})
+        except TypeError:
+            # 2) Fallback posizionale
+            try:
+                return cls(*[data[f] for f in fields])
+            except Exception as e2:
+                raise TypeError(f"Impossibile costruire {cls.__name__} per '{key}': {e2}")
+    
     def buildBlocks(self):
-        endBlock = EndBlock()  
-        inEsame = InEsame("InEsame", 2, 300, 10000, 0.5)
-        compilazione=Compilazione("Evasione", 1, 600, 14400, 0.1)
-        diretta=AccettazioneDiretta(name="AccettazioneDiretta",mean=180, variance=3600)
-        instradamento = Instradamento(name="Instradamento", rate=6.25,multiServiceRate=5,queueMaxLenght=1000)
-        autenticazione = Autenticazione(name="Autenticazione", serviceRate=4.0,multiServiceRate=3,successProbability=0.9,compilazionePrecompilataProbability=0.3)
-
+    
+        cfg_path = Path(__file__).resolve().parents[2] / "conf" / "input.json"
+        if not cfg_path.exists():
+            raise FileNotFoundError(f"Config non trovata: {cfg_path}")
+    
+        with cfg_path.open("r", encoding="utf-8") as f:
+            cfg = json.load(f)
+    
+        try:
+            endBlock       = EndBlock()
+            inEsame        = self._instantiate(cfg, "inEsame")
+            compilazione   = self._instantiate(cfg, "compilazione")
+            diretta        = self._instantiate(cfg, "diretta")
+            instradamento  = self._instantiate(cfg, "instradamento")
+            autenticazione = self._instantiate(cfg, "autenticazione")
+        except Exception as e:
         
+            raise RuntimeError(f"Errore caricando/istanziando da {cfg_path}: {e}")
 
+        #todo sistema sta cosa dopo uguale a cosi json
+        startingBlock = StartBlock("Start", start_timestamp=datetime(2025, 5, 1, 0, 0),end_timestamp=datetime(2025, 5, 3,0,0))
+
+
+        startingBlock.setNextBlock(instradamento)   
         inEsame.setInstradamento(instradamento)
         autenticazione.setInstradamento(instradamento)
         autenticazione.setCompilazione(compilazione)
@@ -57,8 +121,9 @@ class SimulationEngine:
         diretta.setNextBlock(inEsame)
         inEsame.setEnd(endBlock)
         instradamento.setNextBlock(autenticazione)
-        instradamento.setQueueFullFallBackBlock(endBlock)
-        return instradamento, autenticazione, compilazione, diretta, inEsame,endBlock
+        
+        return startingBlock,instradamento, autenticazione, compilazione, diretta, inEsame, endBlock
+    
 
     def normale(self):
         """Inizializza il motore di simulazione con i blocchi di partenza e fine.
@@ -68,18 +133,12 @@ class SimulationEngine:
         """
         self.event_queue = EventQueue()
        
-        instradamento, autenticazione, compilazione, diretta, inEsame,endBlock=self.buildBlocks()
+        startingBlock,instradamento, autenticazione, compilazione, diretta, inEsame,endBlock=self.buildBlocks()
 
+        daily_rates = self.getArrivalsRates()
 
-
-
-        daily_rates = self.generateArrivalsRates()
-
-
-        
-        startingBlock = StartBlock("Start", nextBlock=instradamento, start_timestamp=datetime(2025, 5, 1, 0, 0), daily_rates=daily_rates)
-        
-    
+        startingBlock.setDailyRates(daily_rates)
+        startingBlock.setNextBlock(instradamento)
         startingEvent = startingBlock.start()
         self.event_queue.push(startingEvent)
         #Simulo fino alla fine
@@ -93,7 +152,3 @@ class SimulationEngine:
                             self.event_queue.push(new_event)
         # Scrive i risultati finali in formato testuale e JSON.
         endBlock.finalize()
-
-
-
-
