@@ -88,7 +88,6 @@ class StartBlock(SimBlockInterface):
 
         # Salvataggio del tasso medio giornaliero in base al giorno in cui è stata generata l'entità
         day_rate = self.getDailyRateForDate(nextServe)
-        print(f"[{self.name}] Created entity #{self.generated} on {nextServe.date()} with daily rate {day_rate:.4f}")
 
         return Event(nextServe, self.name, self.next, "generated_event", self.serveNext)
 
@@ -107,7 +106,6 @@ class StartBlock(SimBlockInterface):
         events = []
 
         if self.nextBlock:
-            print(endTime)
             event = self.nextBlock.putInQueue(serving, endTime)
            
             if event:

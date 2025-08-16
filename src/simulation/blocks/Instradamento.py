@@ -47,14 +47,12 @@ class Instradamento(SimBlockInterface):
     def putInQueue(self,person: Person,timestamp: datetime) ->list[Event]:
 
         state=NormalState(self.name, timestamp, self.queueLenght)
-        
         self.queue.append(person)
         person.append_state(state)
         if self.queueLenght >= self.queueMaxLenght:
             #TODO fare in modo che il blocco finale si accorga che il l'utente è stato scartato
-            return self.endBlock.putInQueue(person, timestamp)
-
-
+            event= self.endBlock.putInQueue(person, timestamp)
+            return event if event else []
         self.queueLenght += 1
         if self.working < self.multiServiceRate:
             events = self.putNextEvenet(timestamp)
@@ -68,11 +66,12 @@ class Instradamento(SimBlockInterface):
         if self.working < self.multiServiceRate:
             self.working += 1
             person=self.queue.pop(0)
+           
             if person.get_last_state().enqueue_time > exitQueueTime:
                 exitQueueTime = person.get_last_state().enqueue_time
             person.get_last_state().service_start_time = exitQueueTime
             self.queueLenght -= 1
-            person.service_end_time = self.getServiceTime(exitQueueTime)
+            person.get_last_state().service_end_time = self.getServiceTime(exitQueueTime)
             return [Event(person.get_last_state().service_end_time,  self.name,person, f"{self.working-1} pepole where working", self.serveNext)]
         return []
 

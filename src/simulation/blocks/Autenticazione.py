@@ -105,7 +105,7 @@ class Autenticazione(SimBlockInterface):
             if event:
                 events.extend(event)
 
-        login_sucess = self.get_login_sucess(serving)
+        login_sucess = self.get_login_sucess()
         if not login_sucess:
             event=self.instradamento.putInQueue(serving, endTime)
         else:

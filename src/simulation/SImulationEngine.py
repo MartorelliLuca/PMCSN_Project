@@ -44,8 +44,10 @@ class SimulationEngine:
         inEsame = InEsame("InEsame", 2, 300, 10000, 0.5)
         compilazione=Compilazione("Evasione", 1, 600, 14400, 0.1)
         diretta=AccettazioneDiretta(name="AccettazioneDiretta",mean=180, variance=3600)
-        instradamento = Instradamento(name="Instradamento", rate=6.25,multiServiceRate=5,queueMaxLenght=50)
+        instradamento = Instradamento(name="Instradamento", rate=6.25,multiServiceRate=5,queueMaxLenght=1000)
         autenticazione = Autenticazione(name="Autenticazione", serviceRate=4.0,multiServiceRate=3,successProbability=0.9,compilazionePrecompilataProbability=0.3)
+
+        
 
         inEsame.setInstradamento(instradamento)
         autenticazione.setInstradamento(instradamento)
@@ -54,6 +56,8 @@ class SimulationEngine:
         compilazione.setNextBlock(inEsame)
         diretta.setNextBlock(inEsame)
         inEsame.setEnd(endBlock)
+        instradamento.setNextBlock(autenticazione)
+        instradamento.setQueueFullFallBackBlock(endBlock)
         return instradamento, autenticazione, compilazione, diretta, inEsame,endBlock
 
     def normale(self):
@@ -82,14 +86,10 @@ class SimulationEngine:
         while not self.event_queue.is_empty():
             event = self.event_queue.pop()
             event=event[0] if isinstance(event, list) else event
-            #print(f"Processing event: {event}","timestamp:", event.timestamp, "serviceName:", event.serviceName, "person:", event.person.ID, "eventType:", event.eventType)
             if event.handler:
-                print(f"Processing event: {event.timestamp} - {event.serviceName} - {event.person.ID} - {event.eventType}  - {event.handler}.{event.handler.__name__} - {event.handler.__self__.__class__.__name__ if hasattr(event.handler, '__self__') else 'N/A'}")
-                new_events = event.handler(None)
+                new_events = event.handler(event.person)
                 if new_events:
                     for new_event in new_events:
-                        if isinstance(new_event,datetime):
-                            print(f"ciao")
                             self.event_queue.push(new_event)
         # Scrive i risultati finali in formato testuale e JSON.
         endBlock.finalize()
