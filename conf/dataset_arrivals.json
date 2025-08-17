@@ -1,0 +1,769 @@
+{
+  "days": [
+    {
+      "date": "2025-05-01",
+      "arrivals": 285336,
+      "lambda_per_sec": 3.3025
+    },
+    {
+      "date": "2025-05-02",
+      "arrivals": 284487,
+      "lambda_per_sec": 3.29267361
+    },
+    {
+      "date": "2025-05-03",
+      "arrivals": 270757,
+      "lambda_per_sec": 3.13376157
+    },
+    {
+      "date": "2025-05-04",
+      "arrivals": 258830,
+      "lambda_per_sec": 2.99571759
+    },
+    {
+      "date": "2025-05-05",
+      "arrivals": 258929,
+      "lambda_per_sec": 2.99686343
+    },
+    {
+      "date": "2025-05-06",
+      "arrivals": 249544,
+      "lambda_per_sec": 2.88824074
+    },
+    {
+      "date": "2025-05-07",
+      "arrivals": 240779,
+      "lambda_per_sec": 2.78679398
+    },
+    {
+      "date": "2025-05-08",
+      "arrivals": 240384,
+      "lambda_per_sec": 2.78222222
+    },
+    {
+      "date": "2025-05-09",
+      "arrivals": 244055,
+      "lambda_per_sec": 2.82471065
+    },
+    {
+      "date": "2025-05-10",
+      "arrivals": 241498,
+      "lambda_per_sec": 2.79511574
+    },
+    {
+      "date": "2025-05-11",
+      "arrivals": 237831,
+      "lambda_per_sec": 2.75267361
+    },
+    {
+      "date": "2025-05-12",
+      "arrivals": 236900,
+      "lambda_per_sec": 2.74189815
+    },
+    {
+      "date": "2025-05-13",
+      "arrivals": 236418,
+      "lambda_per_sec": 2.73631944
+    },
+    {
+      "date": "2025-05-14",
+      "arrivals": 224980,
+      "lambda_per_sec": 2.60393519
+    },
+    {
+      "date": "2025-05-15",
+      "arrivals": 223544,
+      "lambda_per_sec": 2.58731481
+    },
+    {
+      "date": "2025-05-16",
+      "arrivals": 217196,
+      "lambda_per_sec": 2.51384259
+    },
+    {
+      "date": "2025-05-17",
+      "arrivals": 213595,
+      "lambda_per_sec": 2.47216435
+    },
+    {
+      "date": "2025-05-18",
+      "arrivals": 209109,
+      "lambda_per_sec": 2.42024306
+    },
+    {
+      "date": "2025-05-19",
+      "arrivals": 208642,
+      "lambda_per_sec": 2.41483796
+    },
+    {
+      "date": "2025-05-20",
+      "arrivals": 202442,
+      "lambda_per_sec": 2.3430787
+    },
+    {
+      "date": "2025-05-21",
+      "arrivals": 206827,
+      "lambda_per_sec": 2.39383102
+    },
+    {
+      "date": "2025-05-22",
+      "arrivals": 200723,
+      "lambda_per_sec": 2.32318287
+    },
+    {
+      "date": "2025-05-23",
+      "arrivals": 196778,
+      "lambda_per_sec": 2.27752315
+    },
+    {
+      "date": "2025-05-24",
+      "arrivals": 193523,
+      "lambda_per_sec": 2.23984954
+    },
+    {
+      "date": "2025-05-25",
+      "arrivals": 194525,
+      "lambda_per_sec": 2.25144676
+    },
+    {
+      "date": "2025-05-26",
+      "arrivals": 189150,
+      "lambda_per_sec": 2.18923611
+    },
+    {
+      "date": "2025-05-27",
+      "arrivals": 142941,
+      "lambda_per_sec": 1.65440972
+    },
+    {
+      "date": "2025-05-28",
+      "arrivals": 183020,
+      "lambda_per_sec": 2.11828704
+    },
+    {
+      "date": "2025-05-29",
+      "arrivals": 205856,
+      "lambda_per_sec": 2.38259259
+    },
+    {
+      "date": "2025-05-30",
+      "arrivals": 209466,
+      "lambda_per_sec": 2.424375
+    },
+    {
+      "date": "2025-05-31",
+      "arrivals": 198746,
+      "lambda_per_sec": 2.30030093
+    },
+    {
+      "date": "2025-06-01",
+      "arrivals": 150936,
+      "lambda_per_sec": 1.74694444
+    },
+    {
+      "date": "2025-06-02",
+      "arrivals": 133822,
+      "lambda_per_sec": 1.54886574
+    },
+    {
+      "date": "2025-06-03",
+      "arrivals": 116580,
+      "lambda_per_sec": 1.34930556
+    },
+    {
+      "date": "2025-06-04",
+      "arrivals": 96862,
+      "lambda_per_sec": 1.12108796
+    },
+    {
+      "date": "2025-06-05",
+      "arrivals": 73138,
+      "lambda_per_sec": 0.84650463
+    },
+    {
+      "date": "2025-06-06",
+      "arrivals": 115037,
+      "lambda_per_sec": 1.33144676
+    },
+    {
+      "date": "2025-06-07",
+      "arrivals": 115092,
+      "lambda_per_sec": 1.33208333
+    },
+    {
+      "date": "2025-06-08",
+      "arrivals": 114471,
+      "lambda_per_sec": 1.32489583
+    },
+    {
+      "date": "2025-06-09",
+      "arrivals": 115530,
+      "lambda_per_sec": 1.33715278
+    },
+    {
+      "date": "2025-06-10",
+      "arrivals": 115811,
+      "lambda_per_sec": 1.34040509
+    },
+    {
+      "date": "2025-06-11",
+      "arrivals": 117514,
+      "lambda_per_sec": 1.36011574
+    },
+    {
+      "date": "2025-06-12",
+      "arrivals": 116653,
+      "lambda_per_sec": 1.35015046
+    },
+    {
+      "date": "2025-06-13",
+      "arrivals": 115808,
+      "lambda_per_sec": 1.34037037
+    },
+    {
+      "date": "2025-06-14",
+      "arrivals": 116337,
+      "lambda_per_sec": 1.34649306
+    },
+    {
+      "date": "2025-06-15",
+      "arrivals": 117770,
+      "lambda_per_sec": 1.3630787
+    },
+    {
+      "date": "2025-06-16",
+      "arrivals": 118489,
+      "lambda_per_sec": 1.37140046
+    },
+    {
+      "date": "2025-06-17",
+      "arrivals": 118410,
+      "lambda_per_sec": 1.37048611
+    },
+    {
+      "date": "2025-06-18",
+      "arrivals": 118524,
+      "lambda_per_sec": 1.37180556
+    },
+    {
+      "date": "2025-06-19",
+      "arrivals": 118137,
+      "lambda_per_sec": 1.36732639
+    },
+    {
+      "date": "2025-06-20",
+      "arrivals": 115429,
+      "lambda_per_sec": 1.3359838
+    },
+    {
+      "date": "2025-06-21",
+      "arrivals": 113820,
+      "lambda_per_sec": 1.31736111
+    },
+    {
+      "date": "2025-06-22",
+      "arrivals": 112953,
+      "lambda_per_sec": 1.30732639
+    },
+    {
+      "date": "2025-06-23",
+      "arrivals": 111458,
+      "lambda_per_sec": 1.29002315
+    },
+    {
+      "date": "2025-06-24",
+      "arrivals": 109997,
+      "lambda_per_sec": 1.27311343
+    },
+    {
+      "date": "2025-06-25",
+      "arrivals": 114754,
+      "lambda_per_sec": 1.3281713
+    },
+    {
+      "date": "2025-06-26",
+      "arrivals": 81150,
+      "lambda_per_sec": 0.93923611
+    },
+    {
+      "date": "2025-06-27",
+      "arrivals": 105316,
+      "lambda_per_sec": 1.21893519
+    },
+    {
+      "date": "2025-06-28",
+      "arrivals": 121727,
+      "lambda_per_sec": 1.40887731
+    },
+    {
+      "date": "2025-06-29",
+      "arrivals": 130262,
+      "lambda_per_sec": 1.50766204
+    },
+    {
+      "date": "2025-06-30",
+      "arrivals": 133618,
+      "lambda_per_sec": 1.54650463
+    },
+    {
+      "date": "2025-07-01",
+      "arrivals": 133208,
+      "lambda_per_sec": 1.54175926
+    },
+    {
+      "date": "2025-07-02",
+      "arrivals": 129556,
+      "lambda_per_sec": 1.49949074
+    },
+    {
+      "date": "2025-07-03",
+      "arrivals": 120901,
+      "lambda_per_sec": 1.39931713
+    },
+    {
+      "date": "2025-07-04",
+      "arrivals": 104515,
+      "lambda_per_sec": 1.20966435
+    },
+    {
+      "date": "2025-07-05",
+      "arrivals": 80525,
+      "lambda_per_sec": 0.93200231
+    },
+    {
+      "date": "2025-07-06",
+      "arrivals": 114089,
+      "lambda_per_sec": 1.32047454
+    },
+    {
+      "date": "2025-07-07",
+      "arrivals": 112678,
+      "lambda_per_sec": 1.30414352
+    },
+    {
+      "date": "2025-07-08",
+      "arrivals": 109444,
+      "lambda_per_sec": 1.26671296
+    },
+    {
+      "date": "2025-07-09",
+      "arrivals": 108217,
+      "lambda_per_sec": 1.25251157
+    },
+    {
+      "date": "2025-07-10",
+      "arrivals": 107503,
+      "lambda_per_sec": 1.24424769
+    },
+    {
+      "date": "2025-07-11",
+      "arrivals": 106939,
+      "lambda_per_sec": 1.23771991
+    },
+    {
+      "date": "2025-07-12",
+      "arrivals": 107461,
+      "lambda_per_sec": 1.24376157
+    },
+    {
+      "date": "2025-07-13",
+      "arrivals": 110534,
+      "lambda_per_sec": 1.2793287
+    },
+    {
+      "date": "2025-07-14",
+      "arrivals": 111638,
+      "lambda_per_sec": 1.29210648
+    },
+    {
+      "date": "2025-07-15",
+      "arrivals": 113323,
+      "lambda_per_sec": 1.3116088
+    },
+    {
+      "date": "2025-07-16",
+      "arrivals": 113524,
+      "lambda_per_sec": 1.31393519
+    },
+    {
+      "date": "2025-07-17",
+      "arrivals": 112818,
+      "lambda_per_sec": 1.30576389
+    },
+    {
+      "date": "2025-07-18",
+      "arrivals": 112452,
+      "lambda_per_sec": 1.30152778
+    },
+    {
+      "date": "2025-07-19",
+      "arrivals": 112086,
+      "lambda_per_sec": 1.29729167
+    },
+    {
+      "date": "2025-07-20",
+      "arrivals": 111270,
+      "lambda_per_sec": 1.28784722
+    },
+    {
+      "date": "2025-07-21",
+      "arrivals": 109695,
+      "lambda_per_sec": 1.26961806
+    },
+    {
+      "date": "2025-07-22",
+      "arrivals": 108309,
+      "lambda_per_sec": 1.25357639
+    },
+    {
+      "date": "2025-07-23",
+      "arrivals": 108357,
+      "lambda_per_sec": 1.25413194
+    },
+    {
+      "date": "2025-07-24",
+      "arrivals": 108658,
+      "lambda_per_sec": 1.25761574
+    },
+    {
+      "date": "2025-07-25",
+      "arrivals": 109245,
+      "lambda_per_sec": 1.26440972
+    },
+    {
+      "date": "2025-07-26",
+      "arrivals": 110593,
+      "lambda_per_sec": 1.28001157
+    },
+    {
+      "date": "2025-07-27",
+      "arrivals": 85480,
+      "lambda_per_sec": 0.98935185
+    },
+    {
+      "date": "2025-07-28",
+      "arrivals": 109743,
+      "lambda_per_sec": 1.27017361
+    },
+    {
+      "date": "2025-07-29",
+      "arrivals": 124013,
+      "lambda_per_sec": 1.43533565
+    },
+    {
+      "date": "2025-07-30",
+      "arrivals": 127065,
+      "lambda_per_sec": 1.47065972
+    },
+    {
+      "date": "2025-07-31",
+      "arrivals": 121566,
+      "lambda_per_sec": 1.40701389
+    },
+    {
+      "date": "2025-08-01",
+      "arrivals": 94247,
+      "lambda_per_sec": 1.09082176
+    },
+    {
+      "date": "2025-08-02",
+      "arrivals": 83822,
+      "lambda_per_sec": 0.97016204
+    },
+    {
+      "date": "2025-08-03",
+      "arrivals": 72908,
+      "lambda_per_sec": 0.84384259
+    },
+    {
+      "date": "2025-08-04",
+      "arrivals": 60283,
+      "lambda_per_sec": 0.69771991
+    },
+    {
+      "date": "2025-08-05",
+      "arrivals": 45293,
+      "lambda_per_sec": 0.52422454
+    },
+    {
+      "date": "2025-08-06",
+      "arrivals": 71313,
+      "lambda_per_sec": 0.82538194
+    },
+    {
+      "date": "2025-08-07",
+      "arrivals": 72448,
+      "lambda_per_sec": 0.83851852
+    },
+    {
+      "date": "2025-08-08",
+      "arrivals": 75233,
+      "lambda_per_sec": 0.87075231
+    },
+    {
+      "date": "2025-08-09",
+      "arrivals": 75913,
+      "lambda_per_sec": 0.87862269
+    },
+    {
+      "date": "2025-08-10",
+      "arrivals": 76272,
+      "lambda_per_sec": 0.88277778
+    },
+    {
+      "date": "2025-08-11",
+      "arrivals": 76242,
+      "lambda_per_sec": 0.88243056
+    },
+    {
+      "date": "2025-08-12",
+      "arrivals": 76426,
+      "lambda_per_sec": 0.88456019
+    },
+    {
+      "date": "2025-08-13",
+      "arrivals": 74037,
+      "lambda_per_sec": 0.85690972
+    },
+    {
+      "date": "2025-08-14",
+      "arrivals": 74055,
+      "lambda_per_sec": 0.85711806
+    },
+    {
+      "date": "2025-08-15",
+      "arrivals": 74165,
+      "lambda_per_sec": 0.8583912
+    },
+    {
+      "date": "2025-08-16",
+      "arrivals": 73322,
+      "lambda_per_sec": 0.84863426
+    },
+    {
+      "date": "2025-08-17",
+      "arrivals": 74001,
+      "lambda_per_sec": 0.85649306
+    },
+    {
+      "date": "2025-08-18",
+      "arrivals": 75262,
+      "lambda_per_sec": 0.87108796
+    },
+    {
+      "date": "2025-08-19",
+      "arrivals": 74992,
+      "lambda_per_sec": 0.86796296
+    },
+    {
+      "date": "2025-08-20",
+      "arrivals": 72564,
+      "lambda_per_sec": 0.83986111
+    },
+    {
+      "date": "2025-08-21",
+      "arrivals": 74474,
+      "lambda_per_sec": 0.86196759
+    },
+    {
+      "date": "2025-08-22",
+      "arrivals": 73451,
+      "lambda_per_sec": 0.85012731
+    },
+    {
+      "date": "2025-08-23",
+      "arrivals": 73446,
+      "lambda_per_sec": 0.85006944
+    },
+    {
+      "date": "2025-08-24",
+      "arrivals": 74100,
+      "lambda_per_sec": 0.85763889
+    },
+    {
+      "date": "2025-08-25",
+      "arrivals": 77336,
+      "lambda_per_sec": 0.89509259
+    },
+    {
+      "date": "2025-08-26",
+      "arrivals": 77005,
+      "lambda_per_sec": 0.89126157
+    },
+    {
+      "date": "2025-08-27",
+      "arrivals": 42485,
+      "lambda_per_sec": 0.49172454
+    },
+    {
+      "date": "2025-08-28",
+      "arrivals": 58018,
+      "lambda_per_sec": 0.67150463
+    },
+    {
+      "date": "2025-08-29",
+      "arrivals": 73795,
+      "lambda_per_sec": 0.8541088
+    },
+    {
+      "date": "2025-08-30",
+      "arrivals": 91852,
+      "lambda_per_sec": 1.06310185
+    },
+    {
+      "date": "2025-08-31",
+      "arrivals": 113511,
+      "lambda_per_sec": 1.31378472
+    },
+    {
+      "date": "2025-09-01",
+      "arrivals": 192581,
+      "lambda_per_sec": 2.22894676
+    },
+    {
+      "date": "2025-09-02",
+      "arrivals": 213892,
+      "lambda_per_sec": 2.47560185
+    },
+    {
+      "date": "2025-09-03",
+      "arrivals": 216422,
+      "lambda_per_sec": 2.50488426
+    },
+    {
+      "date": "2025-09-04",
+      "arrivals": 195062,
+      "lambda_per_sec": 2.25766204
+    },
+    {
+      "date": "2025-09-05",
+      "arrivals": 153191,
+      "lambda_per_sec": 1.77304398
+    },
+    {
+      "date": "2025-09-06",
+      "arrivals": 192531,
+      "lambda_per_sec": 2.22836806
+    },
+    {
+      "date": "2025-09-07",
+      "arrivals": 186364,
+      "lambda_per_sec": 2.15699074
+    },
+    {
+      "date": "2025-09-08",
+      "arrivals": 195139,
+      "lambda_per_sec": 2.25855324
+    },
+    {
+      "date": "2025-09-09",
+      "arrivals": 199434,
+      "lambda_per_sec": 2.30826389
+    },
+    {
+      "date": "2025-09-10",
+      "arrivals": 200538,
+      "lambda_per_sec": 2.32104167
+    },
+    {
+      "date": "2025-09-11",
+      "arrivals": 201311,
+      "lambda_per_sec": 2.32998843
+    },
+    {
+      "date": "2025-09-12",
+      "arrivals": 210032,
+      "lambda_per_sec": 2.43092593
+    },
+    {
+      "date": "2025-09-13",
+      "arrivals": 213702,
+      "lambda_per_sec": 2.47340278
+    },
+    {
+      "date": "2025-09-14",
+      "arrivals": 224559,
+      "lambda_per_sec": 2.5990625
+    },
+    {
+      "date": "2025-09-15",
+      "arrivals": 243437,
+      "lambda_per_sec": 2.81755787
+    },
+    {
+      "date": "2025-09-16",
+      "arrivals": 251950,
+      "lambda_per_sec": 2.91608796
+    },
+    {
+      "date": "2025-09-17",
+      "arrivals": 247191,
+      "lambda_per_sec": 2.86100694
+    },
+    {
+      "date": "2025-09-18",
+      "arrivals": 241795,
+      "lambda_per_sec": 2.79855324
+    },
+    {
+      "date": "2025-09-19",
+      "arrivals": 240642,
+      "lambda_per_sec": 2.78520833
+    },
+    {
+      "date": "2025-09-20",
+      "arrivals": 231395,
+      "lambda_per_sec": 2.67818287
+    },
+    {
+      "date": "2025-09-21",
+      "arrivals": 233079,
+      "lambda_per_sec": 2.69767361
+    },
+    {
+      "date": "2025-09-22",
+      "arrivals": 239541,
+      "lambda_per_sec": 2.77246528
+    },
+    {
+      "date": "2025-09-23",
+      "arrivals": 252777,
+      "lambda_per_sec": 2.92565972
+    },
+    {
+      "date": "2025-09-24",
+      "arrivals": 261288,
+      "lambda_per_sec": 3.02416667
+    },
+    {
+      "date": "2025-09-25",
+      "arrivals": 270676,
+      "lambda_per_sec": 3.13282407
+    },
+    {
+      "date": "2025-09-26",
+      "arrivals": 277082,
+      "lambda_per_sec": 3.20696759
+    },
+    {
+      "date": "2025-09-27",
+      "arrivals": 280472,
+      "lambda_per_sec": 3.2462037
+    },
+    {
+      "date": "2025-09-28",
+      "arrivals": 278706,
+      "lambda_per_sec": 3.22576389
+    },
+    {
+      "date": "2025-09-29",
+      "arrivals": 278864,
+      "lambda_per_sec": 3.22759259
+    },
+    {
+      "date": "2025-09-30",
+      "arrivals": 283158,
+      "lambda_per_sec": 3.27729167
+    }
+  ]
+}

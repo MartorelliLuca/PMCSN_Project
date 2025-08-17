@@ -109,7 +109,7 @@ class SimulationEngine:
             raise RuntimeError(f"Errore caricando/istanziando da {cfg_path}: {e}")
 
         #todo sistema sta cosa dopo uguale a cosi json
-        startingBlock = StartBlock("Start", start_timestamp=datetime(2025, 5, 1, 0, 0),end_timestamp=datetime(2025, 5, 3,0,0))
+        startingBlock = StartBlock("Start", start_timestamp=datetime(2025, 5, 1, 0, 0),end_timestamp=datetime(2025, 6, 10,0,0))
 
 
         startingBlock.setNextBlock(instradamento)   
@@ -121,7 +121,7 @@ class SimulationEngine:
         diretta.setNextBlock(inEsame)
         inEsame.setEnd(endBlock)
         instradamento.setNextBlock(autenticazione)
-        
+        endBlock.setStartBlock(startingBlock)
         return startingBlock,instradamento, autenticazione, compilazione, diretta, inEsame, endBlock
     
 

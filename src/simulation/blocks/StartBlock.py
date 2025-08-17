@@ -31,6 +31,8 @@ class StartBlock(SimBlockInterface):
         self.current_time = start_timestamp                       # tempo corrente nella simulazione
         self.end_timestamp = end_timestamp    # tempo finale della simulazione (30 settembre incluso)
         self.daily_rates = None                            # array di tassi medi giornalieri
+        self.entrate_nel_sistema=[0]*self.get_index_for_date(end_timestamp)  # array per tenere traccia degli arrivi giornalieri
+        self.last_date = None                              # per tracciare il cambio di data
 
     def setDailyRates(self, daily_rates: list[float]):
         """Imposta i tassi medi giornalieri per la simulazione.
@@ -40,7 +42,22 @@ class StartBlock(SimBlockInterface):
         """
         self.daily_rates = daily_rates
 
-    
+
+    def get_entrate_nel_sistema(self,date:datetime):
+        """Restituisce il numero di persone entrate nel sistema in un giorno specifico.
+        
+        Args:
+            date (datetime): La data per cui si vogliono conoscere le entrate.
+        
+        Returns:
+            int: Il numero di persone entrate nel sistema in quella data.
+        """
+        index = self.get_index_for_date(date)
+        if 0 <= index < len(self.entrate_nel_sistema):
+            return self.entrate_nel_sistema[index]
+        return 0
+
+
     def setNextBlock(self, nextBlock: SimBlockInterface):
         """Imposta il blocco successivo da chiamare."""
         self.nextBlock = nextBlock
@@ -61,6 +78,20 @@ class StartBlock(SimBlockInterface):
         exp = rvgs.Exponential(1 / day_rate)
         return time + timedelta(seconds=exp)
 
+
+    def get_index_for_date(self, date_obj: datetime) -> int:
+        """Restituisce l'indice del giorno per una data specifica tra 1 maggio e 30 settembre.
+        
+        Args:
+            date_obj (datetime): La data di cui si vuole conoscere l'indice.
+        
+        Returns:
+            int: L'indice del giorno (0 per il 1 maggio, 121 per il 30 settembre).
+        """
+        base_date = self.start_timestamp
+        return (date_obj.date() - base_date.date()).days
+    
+
     def getDailyRateForDate(self, date_obj: datetime) -> float:
         """Restituisce il tasso giornaliero associato a una data specifica tra 1 maggio e 30 settembre.
         
@@ -70,8 +101,15 @@ class StartBlock(SimBlockInterface):
         Returns:
             float: Il tasso di arrivo giornaliero corrispondente a quella data.
         """
+        current_date = date_obj.date()
+        
+        # Stampa quando la data cambia
+        if self.last_date is None or self.last_date != current_date:
+            print(f"[{self.name}] Date changed to: {current_date}")
+            self.last_date = current_date
+        
         base_date = self.start_timestamp
-        index = (date_obj.date() - base_date.date()).days
+        index = self.get_index_for_date(date_obj)
         if 0 <= index < len(self.daily_rates):
             return self.daily_rates[index]
         return -1.0  # Valore di fallback se la data è fuori intervallo
@@ -116,18 +154,17 @@ class StartBlock(SimBlockInterface):
         self.next = None
         endTime = serving.get_last_state().service_end_time
         events = []
-
+        self.entrate_nel_sistema[self.get_index_for_date(endTime)] += 1
         if self.nextBlock:
             event = self.nextBlock.putInQueue(serving, endTime)
            
             if event:
-                events.extend(event)
-
-        
+                events.extend(event)        
         # Genera il prossimo evento se non abbiamo ancora superato il tempo finale della simulazione
         if self.current_time <= self.end_timestamp:
             new_event = self.start()
             if new_event:
                 events.append(new_event)
-
+               
+           
         return events if events else []

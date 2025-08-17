@@ -7,6 +7,9 @@ from desPython import rvgs
 from datetime import timedelta
 import math
 
+from desPython.rvgsCostum import generate_denormalized_bounded_pareto
+
+
 
 class InEsame(SimBlockInterface):
     
@@ -22,7 +25,6 @@ class InEsame(SimBlockInterface):
         self.working=0
         self.instradamento = None
         self.end=None
-        self.lognormal_params = self.calculateParameters()
 
 
         
@@ -34,29 +36,11 @@ class InEsame(SimBlockInterface):
         """Imposta il blocco di fine."""
         self.end = end
 
-    def calculateParameters(self):
-        """
-        Per una variabile casuale Lognormale(a, b), la media e la varianza sono:
-
-                          media = exp(a + 0.5*b*b)
-                       varianza = (exp(b*b) - 1) * exp(2*a + b*b)
-
-        I parametri a e b devono essere scelti in accordo con la media e varianza desiderate
-        """
     
-        # Calcolo dei parametri a e b dalla media e varianza
-        # b^2 = ln(1 + varianza/media^2)
-        b_squared = math.log(1 + self.variance / (self.mean ** 2))
-        b = math.sqrt(b_squared)
-        
-        # a = ln(media) - 0.5*b^2
-        a = math.log(self.mean) - 0.5 * b_squared
-        return [a,b]
 
 
     def getServiceTime(self,time:datetime)->datetime:
-        a,b=self.lognormal_params
-        lognormal = rvgs.Lognormal(a, b)
+        lognormal = generate_denormalized_bounded_pareto(1.2,0.01,0.1,1.0,8640,259200)
         return time + timedelta(seconds=lognormal)
     
 

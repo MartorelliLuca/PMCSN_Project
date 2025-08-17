@@ -41,7 +41,7 @@ class AccettazioneDiretta(SimBlockInterface):
         """
 
         # Per una distribuzione quasi deterministica, impostiamo b molto piccolo
-        b = 1e-6  # Valore molto piccolo per minimizzare la varianza
+        b = 1e-4  # Valore molto piccolo per minimizzare la varianza
         
         # Con b piccolo, a ≈ ln(media)
         a = math.log(self.mean) - 0.5 * (b ** 2)
@@ -85,8 +85,7 @@ class AccettazioneDiretta(SimBlockInterface):
         if self.working < self.multiServiceRate:
             self.working += 1
             person=self.queue.pop(0)
-            if person.get_last_state().enqueue_time > exitQueueTime:
-                exitQueueTime = person.get_last_state().enqueue_time
+            
             person.get_last_state().service_start_time = exitQueueTime
             self.queueLenght -= 1
             person.get_last_state().service_end_time = self.getServiceTime(exitQueueTime)
