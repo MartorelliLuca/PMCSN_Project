@@ -2,8 +2,7 @@ from desPython import rng,rngs,rvgs
 from simulation.states.NormalState import NormalState
 from simulation.EventQueue import EventQueue
 from models.person import Person
-from datetime import datetime, date
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from simulation.blocks.EndBlock import EndBlock
 from simulation.blocks.ExponentialService import ExponentialService
@@ -88,41 +87,61 @@ class SimulationEngine:
             except Exception as e2:
                 raise TypeError(f"Impossibile costruire {cls.__name__} per '{key}': {e2}")
     
-    def buildBlocks(self):
-    
-        cfg_path = Path(__file__).resolve().parents[2] / "conf" / "input.json"
-        if not cfg_path.exists():
-            raise FileNotFoundError(f"Config non trovata: {cfg_path}")
-    
-        with cfg_path.open("r", encoding="utf-8") as f:
-            cfg = json.load(f)
-    
-        try:
-            endBlock       = EndBlock()
-            inEsame        = self._instantiate(cfg, "inEsame")
-            compilazione   = self._instantiate(cfg, "compilazione")
-            diretta        = self._instantiate(cfg, "diretta")
-            instradamento  = self._instantiate(cfg, "instradamento")
-            autenticazione = self._instantiate(cfg, "autenticazione")
-        except Exception as e:
-        
-            raise RuntimeError(f"Errore caricando/istanziando da {cfg_path}: {e}")
-
-        #todo sistema sta cosa dopo uguale a cosi json
-        startingBlock = StartBlock("Start", start_timestamp=datetime(2025, 5, 1, 0, 0),end_timestamp=datetime(2025, 6, 10,0,0))
 
 
-        startingBlock.setNextBlock(instradamento)   
-        inEsame.setInstradamento(instradamento)
-        autenticazione.setInstradamento(instradamento)
-        autenticazione.setCompilazione(compilazione)
-        autenticazione.setAccettazioneDiretta(diretta)
-        compilazione.setNextBlock(inEsame)
-        diretta.setNextBlock(inEsame)
-        inEsame.setEnd(endBlock)
-        instradamento.setNextBlock(autenticazione)
-        endBlock.setStartBlock(startingBlock)
-        return startingBlock,instradamento, autenticazione, compilazione, diretta, inEsame, endBlock
+def buildBlocks(self):
+    cfg_path = Path(__file__).resolve().parents[2] / "conf" / "input.json"
+    if not cfg_path.exists():
+        raise FileNotFoundError(f"Config non trovata: {cfg_path}")
+
+    with cfg_path.open("r", encoding="utf-8") as f:
+        cfg = json.load(f)
+
+    try:
+        endBlock       = EndBlock()
+        inEsame        = self._instantiate(cfg, "inEsame")
+        compilazione   = self._instantiate(cfg, "compilazione")
+        diretta        = self._instantiate(cfg, "diretta")
+        instradamento  = self._instantiate(cfg, "instradamento")
+        autenticazione = self._instantiate(cfg, "autenticazione")
+    except Exception as e:
+        raise RuntimeError(f"Errore caricando/istanziando da {cfg_path}: {e}")
+
+    # Leggi le date dal dataset_arrivals.json
+    arr_path = Path(__file__).resolve().parents[2] / "conf" / "dataset_arrivals.json"
+    if not arr_path.exists():
+        raise FileNotFoundError(f"File non trovato: {arr_path}")
+
+    with arr_path.open("r", encoding="utf-8") as f:
+        arrivals_data = json.load(f)
+
+    days = arrivals_data.get("days", [])
+    if not days:
+        raise ValueError(f"Nessun dato trovato in {arr_path}")
+
+    start_date = datetime.fromisoformat(days[0]["date"])
+    end_date   = datetime.fromisoformat(days[-1]["date"]) + timedelta(days=1)  # fine inclusiva → aggiungi 1 giorno
+
+    startingBlock = StartBlock(
+        "Start",
+        start_timestamp=datetime.combine(start_date, datetime.min.time()),
+        end_timestamp=datetime.combine(end_date, datetime.min.time())
+    )
+
+    # Wiring
+    startingBlock.setNextBlock(instradamento)   
+    inEsame.setInstradamento(instradamento)
+    autenticazione.setInstradamento(instradamento)
+    autenticazione.setCompilazione(compilazione)
+    autenticazione.setAccettazioneDiretta(diretta)
+    compilazione.setNextBlock(inEsame)
+    diretta.setNextBlock(inEsame)
+    inEsame.setEnd(endBlock)
+    instradamento.setNextBlock(autenticazione)
+    endBlock.setStartBlock(startingBlock)
+
+    return startingBlock, instradamento, autenticazione, compilazione, diretta, inEsame, endBlock
+
     
 
     def normale(self):
