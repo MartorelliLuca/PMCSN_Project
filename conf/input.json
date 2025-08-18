@@ -1,34 +1,34 @@
 {
   "inEsame": {
     "name": "InEsame",
-    "servers": 150000,
+    "servers": 100000,
     "mean": 86400,
     "variance": 0,
-    "probability": 0.8
+    "probability": 0.96
   },
   "compilazione": {
     "name": "Evasione",
-    "servers": 100000,
-    "mean": 600,
+    "servers": 4,
+    "mean": 10,
     "variance": 14400,
     "probability": 0.95
   },
   "diretta": {
     "name": "AccettazioneDiretta",
-    "mean": 10,
+    "mean": 0.8,
     "variance": 0
   },
   "instradamento": {
     "name": "Instradamento",
-    "rate": 33.333,
-    "multiServiceRate": 8,
+    "rate": 1.823,
+    "multiServiceRate": 2,
     "queueMaxLenght": 10000
   },
   "autenticazione": {
     "name": "Autenticazione",
-    "serviceRate": 33.333,
-    "multiServiceRate": 8,
+    "serviceRate": 0.33,
+    "multiServiceRate": 20,
     "successProbability": 0.7,
-    "compilazionePrecompilataProbability": 0.8
+    "compilazionePrecompilataProbability": 0.80
   }
 }
