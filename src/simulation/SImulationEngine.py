@@ -89,58 +89,54 @@ class SimulationEngine:
     
 
 
-def buildBlocks(self):
-    cfg_path = Path(__file__).resolve().parents[2] / "conf" / "input.json"
-    if not cfg_path.exists():
-        raise FileNotFoundError(f"Config non trovata: {cfg_path}")
+    def buildBlocks(self):
+        cfg_path = Path(__file__).resolve().parents[2] / "conf" / "input.json"
+        if not cfg_path.exists():
+            raise FileNotFoundError(f"Config non trovata: {cfg_path}")
 
-    with cfg_path.open("r", encoding="utf-8") as f:
-        cfg = json.load(f)
+        with cfg_path.open("r", encoding="utf-8") as f:
+            cfg = json.load(f)
 
-    try:
-        endBlock       = EndBlock()
-        inEsame        = self._instantiate(cfg, "inEsame")
-        compilazione   = self._instantiate(cfg, "compilazione")
-        diretta        = self._instantiate(cfg, "diretta")
-        instradamento  = self._instantiate(cfg, "instradamento")
-        autenticazione = self._instantiate(cfg, "autenticazione")
-    except Exception as e:
-        raise RuntimeError(f"Errore caricando/istanziando da {cfg_path}: {e}")
+        try:
+            endBlock       = EndBlock()
+            inEsame        = self._instantiate(cfg, "inEsame")
+            compilazione   = self._instantiate(cfg, "compilazione")
+            diretta        = self._instantiate(cfg, "diretta")
+            instradamento  = self._instantiate(cfg, "instradamento")
+            autenticazione = self._instantiate(cfg, "autenticazione")
+        except Exception as e:
+            raise RuntimeError(f"Errore caricando/istanziando da {cfg_path}: {e}")
 
-    # Leggi le date dal dataset_arrivals.json
-    arr_path = Path(__file__).resolve().parents[2] / "conf" / "dataset_arrivals.json"
-    if not arr_path.exists():
-        raise FileNotFoundError(f"File non trovato: {arr_path}")
+        # Leggi le date dalla sezione "date"
+        if "date" not in cfg:
+            raise KeyError(f"Sezione 'date' mancante in {cfg_path}")
 
-    with arr_path.open("r", encoding="utf-8") as f:
-        arrivals_data = json.load(f)
+        start_date_str = cfg["date"]["start"]
+        end_date_str   = cfg["date"]["end"]
 
-    days = arrivals_data.get("days", [])
-    if not days:
-        raise ValueError(f"Nessun dato trovato in {arr_path}")
+        start_date = datetime.fromisoformat(start_date_str)
+        # La fine la mettiamo al giorno successivo alle 00:00 per includere tutto l'ultimo giorno
+        end_date   = datetime.fromisoformat(end_date_str) + timedelta(days=1)
 
-    start_date = datetime.fromisoformat(days[0]["date"])
-    end_date   = datetime.fromisoformat(days[-1]["date"]) + timedelta(days=1)  # fine inclusiva → aggiungi 1 giorno
+        startingBlock = StartBlock(
+            "Start",
+            start_timestamp=datetime.combine(start_date, datetime.min.time()),
+            end_timestamp=datetime.combine(end_date, datetime.min.time())
+        )
 
-    startingBlock = StartBlock(
-        "Start",
-        start_timestamp=datetime.combine(start_date, datetime.min.time()),
-        end_timestamp=datetime.combine(end_date, datetime.min.time())
-    )
+        # Wiring
+        startingBlock.setNextBlock(instradamento)   
+        inEsame.setInstradamento(instradamento)
+        autenticazione.setInstradamento(instradamento)
+        autenticazione.setCompilazione(compilazione)
+        autenticazione.setAccettazioneDiretta(diretta)
+        compilazione.setNextBlock(inEsame)
+        diretta.setNextBlock(inEsame)
+        inEsame.setEnd(endBlock)
+        instradamento.setNextBlock(autenticazione)
+        endBlock.setStartBlock(startingBlock)
 
-    # Wiring
-    startingBlock.setNextBlock(instradamento)   
-    inEsame.setInstradamento(instradamento)
-    autenticazione.setInstradamento(instradamento)
-    autenticazione.setCompilazione(compilazione)
-    autenticazione.setAccettazioneDiretta(diretta)
-    compilazione.setNextBlock(inEsame)
-    diretta.setNextBlock(inEsame)
-    inEsame.setEnd(endBlock)
-    instradamento.setNextBlock(autenticazione)
-    endBlock.setStartBlock(startingBlock)
-
-    return startingBlock, instradamento, autenticazione, compilazione, diretta, inEsame, endBlock
+        return startingBlock, instradamento, autenticazione, compilazione, diretta, inEsame, endBlock
 
     
 

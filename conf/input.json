@@ -30,5 +30,9 @@
     "multiServiceRate": 20,
     "successProbability": 0.7,
     "compilazionePrecompilataProbability": 0.80
+  },
+  "date": {
+    "start": "2025-05-01",
+    "end": "2025-09-30"
   }
 }
