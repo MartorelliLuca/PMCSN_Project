@@ -23,6 +23,25 @@ class SimulationEngine:
     Inizializza i blocchi di partenza e di fine, gestisce la coda degli eventi e processa gli eventi in ordine temporale.
     """
 
+
+    #getArrivalsRate() che ti crea un array di 365 rates che decidiamo noi con lambda uguale per tutti con 200
+    #ci serve per l'analisi del transitorio
+    def getArrivalsRatesToInfinite(self) -> list[float]:
+        """
+           Legge dal file ../../conf/dataset_arrival_rate.json il valore 'arrival_rate'
+           e crea un array di 300 elementi con quel valore ripetuto.
+           """
+        conf_path = Path(__file__).resolve().parents[2] / "conf" / "dataset_arrival_rate.json"
+        if not conf_path.exists():
+            raise FileNotFoundError(f"File non trovato: {conf_path}")
+
+        with conf_path.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        rate = float(data["arrival_rate"])
+        rates = [rate] * 300
+
+        return rates
     
     def getArrivalsRates(self) -> list[float]:
         """
