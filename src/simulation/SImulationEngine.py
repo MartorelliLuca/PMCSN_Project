@@ -125,7 +125,8 @@ class SimulationEngine:
         )
 
         # Wiring
-        startingBlock.setNextBlock(instradamento)   
+        startingBlock.setNextBlock(instradamento)
+        instradamento.setQueueFullFallBackBlock(endBlock)
         inEsame.setInstradamento(instradamento)
         autenticazione.setInstradamento(instradamento)
         autenticazione.setCompilazione(compilazione)
