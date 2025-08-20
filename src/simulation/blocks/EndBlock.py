@@ -86,7 +86,7 @@ class EndBlock(SimBlockInterface):
         """Aggiorna le statistiche del giorno corrente con i dati di una persona."""
         last_state = person.get_last_state()
 
-        if last_state.get_service_name()  != "InEsame":
+        if last_state.get_service_name()  != "InValutazione":
             self.day_summary["trovato_coda_piena"] += 1
             return
         self.day_summary["usciti"] += 1

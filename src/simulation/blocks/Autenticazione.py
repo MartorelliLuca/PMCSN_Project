@@ -12,7 +12,7 @@ class Autenticazione(SimBlockInterface):
     def __init__(self, name, serviceRate,multiServiceRate,successProbability,compilazionePrecompilataProbability):
         ''' Remember  to set the following blocks:
         - invioDiretto
-        - compilazione
+        - compilazionePrecompilata
         - instradamento
         '''
         self.name = name
@@ -33,7 +33,7 @@ class Autenticazione(SimBlockInterface):
 
     def setCompilazione(self,nextBlock:SimBlockInterface):
         """Imposta il blocco successivo da chiamare."""
-        self.compilazione = nextBlock
+        self.compilazionePrecompilata = nextBlock
 
     def setInstradamento(self,instradamento:SimBlockInterface):
         """Imposta il blocco di instradamento."""
@@ -111,7 +111,7 @@ class Autenticazione(SimBlockInterface):
         else:
             precompilataSuccess= self.isPrecompilata()
             if precompilataSuccess:
-                event=self.compilazione.putInQueue(serving, endTime)
+                event=self.compilazionePrecompilata.putInQueue(serving, endTime)
             else:
                 event=self.invioDiretto.putInQueue(serving, endTime)
         if event:

@@ -1,7 +1,7 @@
 {
   "inValutazione": {
     "name": "InValutazione",
-    "servers": 100000,
+    "servers": 95000,
     "mean": 86400,
     "variance": 0,
     "probability": 0.96
@@ -21,18 +21,18 @@
   "instradamento": {
     "name": "Instradamento",
     "rate": 1.700,
-    "multiServiceRate": 2,
-    "queueMaxLenght": 10000
+    "multiServiceRate": 4,
+    "queueMaxLenght": 30000
   },
   "autenticazione": {
     "name": "Autenticazione",
     "serviceRate": 0.33,
-    "multiServiceRate": 10,
-    "successProbability": 0.7,
+    "multiServiceRate": 18,
+    "successProbability": 0.75,
     "compilazionePrecompilataProbability": 0.80
   },
   "date": {
     "start": "2025-05-01",
-    "end": "2025-06-20"
+    "end": "2025-05-03"
   }
 }
