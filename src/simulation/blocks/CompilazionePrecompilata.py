@@ -8,14 +8,15 @@ from datetime import timedelta
 import math
 
 
-class AccettazioneDiretta(SimBlockInterface):
+class CompilazionePrecompilata(SimBlockInterface):
     
-    def __init__(self, name, mean,variance):
+    def __init__(self, name, multiServiceRate,mean,variance,compilationSuccessRate):
        
         self.name = name
         self.mean = mean
         self.variance = variance
-        self.multiServiceRate=1
+        self.multiServiceRate=multiServiceRate
+        self.compilationSuccessRate = compilationSuccessRate
         self.queueLenght = 0
         self.queue=[]
         self.working=0
@@ -36,17 +37,17 @@ class AccettazioneDiretta(SimBlockInterface):
                           media = exp(a + 0.5*b*b)
                        varianza = (exp(b*b) - 1) * exp(2*a + b*b)
 
-        Per rendere la distribuzione il più deterministica possibile, 
-        si imposta b molto piccolo (vicino a 0) per minimizzare la varianza.
+        I parametri a e b devono essere scelti in accordo con la media e varianza desiderate
         """
-
-        # Per una distribuzione quasi deterministica, impostiamo b molto piccolo
-        b = 1e-4  # Valore molto piccolo per minimizzare la varianza
+    
+        # Calcolo dei parametri a e b dalla media e varianza
+        # b^2 = ln(1 + varianza/media^2)
+        b_squared = math.log(1 + self.variance / (self.mean ** 2))
+        b = math.sqrt(b_squared)
         
-        # Con b piccolo, a ≈ ln(media)
-        a = math.log(self.mean) - 0.5 * (b ** 2)
-        
-        return [a, b]
+        # a = ln(media) - 0.5*b^2
+        a = math.log(self.mean) - 0.5 * b_squared
+        return [a,b]
 
 
     def getServiceTime(self,time:datetime)->datetime:
@@ -56,7 +57,11 @@ class AccettazioneDiretta(SimBlockInterface):
     
 
 
-
+    def getSuccess(self):
+        n=rvgs.Uniform(0,1)
+        if n > self.compilationSuccessRate:
+            return False
+        return True
     
     def get_service_name(self) -> str:
         
@@ -85,7 +90,8 @@ class AccettazioneDiretta(SimBlockInterface):
         if self.working < self.multiServiceRate:
             self.working += 1
             person=self.queue.pop(0)
-            
+            if person.get_last_state().enqueue_time > exitQueueTime:
+                exitQueueTime = person.get_last_state().enqueue_time
             person.get_last_state().service_start_time = exitQueueTime
             self.queueLenght -= 1
             person.get_last_state().service_end_time = self.getServiceTime(exitQueueTime)
@@ -102,9 +108,13 @@ class AccettazioneDiretta(SimBlockInterface):
         if self.queue:
             event = self.putNextEvenet(endTime)
             if event:
-                events.extend(event)    
-        event=self.nextBlock.putInQueue(serving, endTime)
-        
+                events.extend(event)
+
+        compilationSuccess = self.getSuccess()
+        if compilationSuccess:
+            event=self.nextBlock.putInQueue(serving, endTime)
+        else:
+            event=self.putInQueue(serving, endTime)
         if event:
             events.extend(event)
         return events

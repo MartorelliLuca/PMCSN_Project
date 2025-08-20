@@ -1,10 +1,10 @@
 
 
 import sys
-from simulation import SImulationEngine
+from simulation import SimulationEngine
 
 
 
 
 if __name__ == "__main__":
-    SImulationEngine.SimulationEngine().normale()
+    SimulationEngine.SimulationEngine().normale()

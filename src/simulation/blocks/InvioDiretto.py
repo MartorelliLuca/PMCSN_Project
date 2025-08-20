@@ -7,49 +7,56 @@ from desPython import rvgs
 from datetime import timedelta
 import math
 
-from desPython.rvgsCostum import generate_denormalized_bounded_pareto
 
-
-
-class InEsame(SimBlockInterface):
+class InvioDiretto(SimBlockInterface):
     
-    def __init__(self, name, multiServiceRate,mean,variance,accetpanceRate):
+    def __init__(self, name, mean,variance):
        
         self.name = name
         self.mean = mean
         self.variance = variance
-        self.multiServiceRate=multiServiceRate
-        self.accetpanceRate = accetpanceRate
+        self.multiServiceRate=1
         self.queueLenght = 0
         self.queue=[]
         self.working=0
-        self.instradamento = None
-        self.end=None
+        self.nextBlock = None
+        self.lognormal_params = self.calculateParameters()
 
 
         
-    def setInstradamento(self,instradamento:SimBlockInterface):
-        """Imposta il blocco di instradamento."""
-        self.instradamento = instradamento
+    def setNextBlock(self,nextBlock:SimBlockInterface):
+        """Imposta il blocco successivo da chiamare."""
+        self.nextBlock = nextBlock
 
-    def setEnd(self,end:SimBlockInterface): 
-        """Imposta il blocco di fine."""
-        self.end = end
 
-    
+    def calculateParameters(self):
+        """
+        Per una variabile casuale Lognormale(a, b), la media e la varianza sono:
+
+                          media = exp(a + 0.5*b*b)
+                       varianza = (exp(b*b) - 1) * exp(2*a + b*b)
+
+        Per rendere la distribuzione il più deterministica possibile, 
+        si imposta b molto piccolo (vicino a 0) per minimizzare la varianza.
+        """
+
+        # Per una distribuzione quasi deterministica, impostiamo b molto piccolo
+        b = 1e-4  # Valore molto piccolo per minimizzare la varianza
+        
+        # Con b piccolo, a ≈ ln(media)
+        a = math.log(self.mean) - 0.5 * (b ** 2)
+        
+        return [a, b]
 
 
     def getServiceTime(self,time:datetime)->datetime:
-        lognormal = generate_denormalized_bounded_pareto(1.2,0.01,0.1,1.0,8640,259200)
+        a,b=self.lognormal_params
+        lognormal = rvgs.Lognormal(a, b)
         return time + timedelta(seconds=lognormal)
     
 
 
-    def getSuccess(self):
-        n=rvgs.Uniform(0,1)
-        if n > self.accetpanceRate:
-            return False
-        return True
+
     
     def get_service_name(self) -> str:
         
@@ -78,8 +85,7 @@ class InEsame(SimBlockInterface):
         if self.working < self.multiServiceRate:
             self.working += 1
             person=self.queue.pop(0)
-            if person.get_last_state().enqueue_time > exitQueueTime:
-                exitQueueTime = person.get_last_state().enqueue_time
+            
             person.get_last_state().service_start_time = exitQueueTime
             self.queueLenght -= 1
             person.get_last_state().service_end_time = self.getServiceTime(exitQueueTime)
@@ -96,13 +102,9 @@ class InEsame(SimBlockInterface):
         if self.queue:
             event = self.putNextEvenet(endTime)
             if event:
-                events.extend(event)
-
-        compilationSuccess = self.getSuccess()
-        if compilationSuccess:
-            event=self.end.putInQueue(serving, endTime)
-        else:
-            event=self.instradamento.putInQueue(serving, endTime)
+                events.extend(event)    
+        event=self.nextBlock.putInQueue(serving, endTime)
+        
         if event:
             events.extend(event)
         return events

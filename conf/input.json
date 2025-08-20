@@ -1,20 +1,20 @@
 {
-  "inEsame": {
-    "name": "InEsame",
+  "inValutazione": {
+    "name": "InValutazione",
     "servers": 100000,
     "mean": 86400,
     "variance": 0,
     "probability": 0.96
   },
-  "compilazione": {
-    "name": "Evasione",
+  "compilazionePrecompilata": {
+    "name": "CompilazionePrecompilata",
     "servers": 920,
     "mean": 600,
     "variance": 3240000,
     "probability": 0.95
   },
-  "diretta": {
-    "name": "AccettazioneDiretta",
+  "invioDiretto": {
+    "name": "InvioDiretto",
     "mean": 0.70,
     "variance": 0
   },

@@ -7,15 +7,18 @@ from datetime import datetime, timedelta
 from simulation.blocks.EndBlock import EndBlock
 from simulation.blocks.ExponentialService import ExponentialService
 from simulation.blocks.StartBlock import StartBlock
-from simulation.blocks.AccettazioneDiretta import AccettazioneDiretta
-from simulation.blocks.Compilazione import Compilazione
-from simulation.blocks.InEsame import InEsame
+from simulation.blocks.InvioDiretto import InvioDiretto
+from simulation.blocks.CompilazionePrecompilata import CompilazionePrecompilata
+from simulation.blocks.InValutazione import InValutazione
 
 from simulation.blocks.Autenticazione import Autenticazione
 from simulation.blocks.Instradamento import Instradamento
 
 from pathlib import Path
 import json
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 
 class SimulationEngine:
@@ -63,11 +66,11 @@ class SimulationEngine:
 
     # Registry: mappa sezione JSON -> (Classe, ordine campi se serve posizionale)
     _REGISTRY = {
-        "inEsame":        (InEsame,             ("name", "servers", "mean", "variance", "probability")),
-        "compilazione":   (Compilazione,        ("name", "servers", "mean", "variance", "probability")),
-        "diretta":        (AccettazioneDiretta, ("name", "mean", "variance")),
-        "instradamento":  (Instradamento,       ("name", "rate", "multiServiceRate", "queueMaxLenght")),
-        "autenticazione": (Autenticazione,      ("name", "serviceRate", "multiServiceRate", "successProbability", "compilazionePrecompilataProbability")),
+        "inValutazione":            (InValutazione,              ("name", "servers", "mean", "variance", "probability")),
+        "compilazionePrecompilata": (CompilazionePrecompilata,   ("name", "servers", "mean", "variance", "probability")),
+        "invioDiretto":             (InvioDiretto,               ("name", "mean", "variance")),
+        "instradamento":            (Instradamento,              ("name", "rate", "multiServiceRate", "queueMaxLenght")),
+        "autenticazione":           (Autenticazione,             ("name", "serviceRate", "multiServiceRate", "successProbability", "compilazionePrecompilataProbability")),
     }
     
     # Alias di chiavi "scritte meglio" -> "come le vuole il costruttore"
@@ -117,12 +120,12 @@ class SimulationEngine:
             cfg = json.load(f)
 
         try:
-            endBlock       = EndBlock()
-            inEsame        = self._instantiate(cfg, "inEsame")
-            compilazione   = self._instantiate(cfg, "compilazione")
-            diretta        = self._instantiate(cfg, "diretta")
-            instradamento  = self._instantiate(cfg, "instradamento")
-            autenticazione = self._instantiate(cfg, "autenticazione")
+            endBlock                   = EndBlock()
+            inValutazione              = self._instantiate(cfg, "inValutazione")
+            compilazionePrecompilata   = self._instantiate(cfg, "compilazionePrecompilata")
+            invioDiretto               = self._instantiate(cfg, "invioDiretto")
+            instradamento              = self._instantiate(cfg, "instradamento")
+            autenticazione             = self._instantiate(cfg, "autenticazione")
         except Exception as e:
             raise RuntimeError(f"Errore caricando/istanziando da {cfg_path}: {e}")
 
@@ -146,17 +149,17 @@ class SimulationEngine:
         # Wiring
         startingBlock.setNextBlock(instradamento)
         instradamento.setQueueFullFallBackBlock(endBlock)
-        inEsame.setInstradamento(instradamento)
+        inValutazione.setInstradamento(instradamento)
         autenticazione.setInstradamento(instradamento)
-        autenticazione.setCompilazione(compilazione)
-        autenticazione.setAccettazioneDiretta(diretta)
-        compilazione.setNextBlock(inEsame)
-        diretta.setNextBlock(inEsame)
-        inEsame.setEnd(endBlock)
+        autenticazione.setCompilazione(compilazionePrecompilata)
+        autenticazione.setInvioDiretto(invioDiretto)
+        compilazionePrecompilata.setNextBlock(inValutazione)
+        invioDiretto.setNextBlock(inValutazione)
+        inValutazione.setEnd(endBlock)
         instradamento.setNextBlock(autenticazione)
         endBlock.setStartBlock(startingBlock)
 
-        return startingBlock, instradamento, autenticazione, compilazione, diretta, inEsame, endBlock
+        return startingBlock, instradamento, autenticazione, compilazionePrecompilata, invioDiretto, inValutazione, endBlock
 
     
 
@@ -167,8 +170,8 @@ class SimulationEngine:
             toSIm (int): Numero di persone da generare nella simulazione.
         """
         self.event_queue = EventQueue()
-       
-        startingBlock,instradamento, autenticazione, compilazione, diretta, inEsame,endBlock=self.buildBlocks()
+
+        startingBlock,instradamento, autenticazione, compilazionePrecompilata, invioDiretto, inValutazione,endBlock=self.buildBlocks()
 
         daily_rates = self.getArrivalsRates()
 
