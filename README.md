@@ -4,31 +4,42 @@ A Performance Modeling and Computer System Networks simulation project implement
 
 ## Quick Start
 
-To run the application:
+To run the simulation:
 ```bash
 python3 src/main.py
 ```
 
+## Features
+
+### Simulation Analysis Tools
+
+1. **Queue Statistics Analysis**: Generate comprehensive visualizations of queue performance
+   ```bash
+   python3 src/analyze_queue_stats.py
+   ```
+
+2. **Large Dataset Analysis**: Optimized analysis for 3-4 months of simulation data
+   ```bash
+   python3 src/analyze_queue_stats_large.py
+   ```
+
+3. **Pareto Distribution Fitting**: Find and test Pareto distribution approximations
+   ```bash
+   python3 src/findPareto.py
+   ```
+
+### Generated Analysis
+
+The analysis tools automatically create visualizations in the `queue_analysis_graphs/` directory:
+
+- **Individual queue analysis**: Distribution plots, temporal trends, and performance metrics
+- **Comparative analysis**: Cross-queue performance comparison and system efficiency
+- **Temporal analysis**: Daily, weekly, and monthly trends
+- **Performance heatmaps**: Queue utilization and wait time patterns over time
+
 ## Documentation
 
-This project uses Sphinx for documentation generation.
-
-### Generating Documentation
-
-1. **Generate API documentation indices:**
-   ```bash
-   sphinx-apidoc -f -o docs/source src/ --separate --module-first
-   ```
-
-2. **Build HTML documentation:**
-   ```bash
-   cd docs && make clean html
-   ```
-
-3. **View documentation:**
-   Open `docs/build/html/index.html` in your browser
-
-> **Note:** Pre-generated documentation is already available in the repository.
+See [DOCUMENTATION.md](DOCUMENTATION.md) for Sphinx documentation generation instructions.
 
 ## Project Structure
 
@@ -39,22 +50,46 @@ PMCSN_Project/
 ├── docs/                    # Sphinx documentation
 ├── drawio-Model/           # System model diagrams
 ├── src/                    # Source code
-│   ├── desPython/          # Discrete event simulation library
-│   ├── interfaces/         # Abstract interfaces
-│   ├── models/             # Data models (person, request)
-│   ├── simulation/         # Simulation engine and components
-│   │   ├── blocks/         # Simulation blocks
-│   │   └── states/         # System states
-│   └── main.py            # Main entry point
+│   ├── analyze_queue_stats.py      # Standard queue analysis tool
+│   ├── analyze_queue_stats_large.py # Large dataset analysis tool
+│   ├── findPareto.py              # Pareto distribution fitting
+│   ├── daily_stats.json           # Generated simulation statistics
+│   ├── desPython/                  # Discrete event simulation library
+│   ├── interfaces/                 # Abstract interfaces
+│   ├── models/                     # Data models (person, request)
+│   ├── simulation/                 # Simulation engine and components
+│   │   ├── blocks/                 # Simulation blocks
+│   │   └── states/                 # System states
+│   ├── queue_analysis_graphs/      # Generated analysis visualizations
+│   └── main.py                     # Main entry point
+├── DOCUMENTATION.md         # Sphinx documentation guide
 └── README.md
 ```
+
+## Analysis Output
+
+The analysis tools generate various types of visualizations:
+
+### Queue Performance Analysis
+- **Distribution plots**: Wait time and execution time distributions for each queue
+- **Temporal trends**: Queue performance over time
+- **Correlation analysis**: Relationship between wait and execution times
+- **Queue length analysis**: Queue capacity utilization patterns
+
+### System-wide Analysis
+- **Efficiency metrics**: System throughput and performance indicators
+- **Comparative analysis**: Cross-queue performance comparison
+- **Heatmaps**: Performance patterns across time and queues
+- **Trend analysis**: Daily, weekly, and monthly patterns
+
+### Pareto Distribution Analysis
+The `findPareto.py` tool helps identify optimal Pareto distribution parameters for modeling arrival patterns and service times by testing various parameter combinations and providing statistical fits.
 
 ## Requirements
 
 - Python 3.x
-- Sphinx (for documentation)
-(for now)
+- matplotlib
+- numpy
+- pandas
 
-
-
-du -b simulation_results.json | awk '{printf "%.6f GB\n", $1/1024/1024/1024}'
+For documentation generation, see [DOCUMENTATION.md](DOCUMENTATION.md).
