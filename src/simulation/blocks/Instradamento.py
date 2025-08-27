@@ -34,7 +34,7 @@ class Instradamento(SimBlockInterface):
     def getServiceTime(self,time:datetime)->datetime:
         from desPython import rngs
         rngs.selectStream(self.stream)
-        exp= rvgs.Exponential(1/self.rate)
+        exp= rvgs.Exponential(1/self.serviceRate)
         return time + timedelta(seconds=exp)
     
 
