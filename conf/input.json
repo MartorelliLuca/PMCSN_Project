@@ -1,14 +1,14 @@
 {
   "inValutazione": {
     "name": "InValutazione",
-    "servers": 95000,
+    "servers": 60000,
     "mean": 86400,
     "variance": 0,
     "probability": 0.96
   },
   "compilazionePrecompilata": {
     "name": "CompilazionePrecompilata",
-    "servers": 920,
+    "servers": 1080,
     "mean": 600,
     "variance": 3240000,
     "probability": 0.95
@@ -27,12 +27,12 @@
   "autenticazione": {
     "name": "Autenticazione",
     "serviceRate": 0.33,
-    "multiServiceRate": 18,
+    "multiServiceRate": 16,
     "successProbability": 0.75,
     "compilazionePrecompilataProbability": 0.80
   },
   "date": {
     "start": "2025-05-01",
-    "end": "2025-05-03"
+    "end": "2025-05-10"
   }
 }
