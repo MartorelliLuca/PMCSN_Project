@@ -1,0 +1,40 @@
+ARRIVAL DATA ANALYSIS REPORT
+==================================================
+
+Analysis Period: 2025-05-01 to 2025-09-30
+Total Days: 153
+
+ARRIVAL STATISTICS:
+  Total Arrivals: 1,781,491
+  Average Daily Arrivals: 11644
+  Median Daily Arrivals: 7899
+  Maximum Daily Arrivals: 38,429
+  Minimum Daily Arrivals: 716
+  Standard Deviation: 11693
+
+ARRIVAL RATE (λ/sec) STATISTICS:
+  Average λ/sec: 0.1348
+  Maximum λ/sec: 0.4448
+  Minimum λ/sec: 0.0083
+
+WEEKLY PATTERNS:
+  Friday: 12144 arrivals
+  Monday: 11601 arrivals
+  Saturday: 11970 arrivals
+  Sunday: 11401 arrivals
+  Thursday: 12644 arrivals
+  Tuesday: 10905 arrivals
+  Wednesday: 10803 arrivals
+
+MONTHLY PATTERNS:
+  May: 23622 arrivals
+  June: 1218 arrivals
+  July: 1175 arrivals
+  August: 7871 arrivals
+  September: 24408 arrivals
+
+GENERATED FILES:
+  - arrivals_overview.png: Main trends and smoothed curves
+  - arrival_patterns.png: Weekly, monthly, and distribution analysis
+  - trend_decomposition.png: Long-term trend analysis
+  - arrival_analysis_report.txt: This summary report

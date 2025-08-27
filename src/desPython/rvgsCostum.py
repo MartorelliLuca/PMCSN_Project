@@ -16,7 +16,7 @@
 # which has support from k to infinity.
 #--------------------------------------------------------------------------
 
-from desPython.rng import random
+from desPython.rngs import random
 from math import log, pow
 
 def denormalize_value(normalized_value, original_l, original_h, normalized_l=0.1, normalized_h=1.0):

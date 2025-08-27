@@ -11,6 +11,7 @@ class Instradamento(SimBlockInterface):
     
     def __init__(self, name, serviceRate,serversNumber,queueMaxLenght):
         
+        self.stream = 4
         self.endBlock = None
        
         self.queueMaxLenght = queueMaxLenght
@@ -31,8 +32,9 @@ class Instradamento(SimBlockInterface):
         self.nextBlock = nextBlock
 
     def getServiceTime(self,time:datetime)->datetime:
-      
-        exp= rvgs.Exponential(1/self.serviceRate)
+        from desPython import rngs
+        rngs.selectStream(self.stream)
+        exp= rvgs.Exponential(1/self.rate)
         return time + timedelta(seconds=exp)
     
 

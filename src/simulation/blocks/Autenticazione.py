@@ -15,6 +15,7 @@ class Autenticazione(SimBlockInterface):
         - compilazionePrecompilata
         - instradamento
         '''
+        self.stream = 2
         self.name = name
         self.serviceRate = serviceRate
         self.successProbability = successProbability
@@ -40,18 +41,23 @@ class Autenticazione(SimBlockInterface):
         self.instradamento = instradamento
 
     def getServiceTime(self,time:datetime)->datetime:
-      
+        from desPython import rngs
+        rngs.selectStream(self.stream)
         exp= rvgs.Exponential(1/self.serviceRate)
         return time + timedelta(seconds=exp)
     
 
     def isPrecompilata(self):
         """Determina se il modulo è precompilato."""
+        from desPython import rngs
+        rngs.selectStream(self.stream)
         n=rvgs.Uniform(0,1)
         if n < self.compilazionePrecompilataProbability:
             return True
         return False
     def get_login_sucess(self):
+        from desPython import rngs
+        rngs.selectStream(self.stream)
         n=rvgs.Uniform(0,1)
         if n > self.successProbability:
             return False

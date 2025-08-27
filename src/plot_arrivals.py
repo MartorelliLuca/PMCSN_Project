@@ -300,7 +300,7 @@ def generate_summary_report(df, output_dir):
     """Generate a summary report of the analysis"""
     report_path = os.path.join(output_dir, 'arrival_analysis_report.txt')
     
-    with open(report_path, 'w') as f:
+    with open(report_path, 'w', encoding='utf-8') as f:
         f.write("ARRIVAL DATA ANALYSIS REPORT\n")
         f.write("=" * 50 + "\n\n")
         

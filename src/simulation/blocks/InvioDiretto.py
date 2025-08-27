@@ -12,6 +12,7 @@ class InvioDiretto(SimBlockInterface):
     
     def __init__(self, name, mean,variance):
        
+        self.stream = 6
         self.name = name
         self.mean = mean
         self.variance = variance
@@ -50,6 +51,8 @@ class InvioDiretto(SimBlockInterface):
 
 
     def getServiceTime(self,time:datetime)->datetime:
+        from desPython import rngs
+        rngs.selectStream(self.stream)
         a,b=self.lognormal_params
         lognormal = rvgs.Lognormal(a, b)
         return time + timedelta(seconds=lognormal)

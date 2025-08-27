@@ -15,6 +15,7 @@ class InValutazione(SimBlockInterface):
     
     def __init__(self, name, serversNumber, mean, variance, accetpanceRate):
        
+        self.stream = 5
         self.name = name
         self.mean = mean
         self.variance = variance
@@ -40,12 +41,16 @@ class InValutazione(SimBlockInterface):
 
 
     def getServiceTime(self,time:datetime)->datetime:
+        from desPython import rngs
+        rngs.selectStream(self.stream)
         lognormal = generate_denormalized_bounded_pareto(1.2,0.01,0.1,1.0,8640,259200)
         return time + timedelta(seconds=lognormal)
     
 
 
     def getSuccess(self):
+        from desPython import rngs
+        rngs.selectStream(self.stream)
         n=rvgs.Uniform(0,1)
         if n > self.accetpanceRate:
             return False

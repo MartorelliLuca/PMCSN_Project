@@ -1,4 +1,4 @@
-from desPython import rng,rngs,rvgs
+from desPython import rngs,rvgs
 from simulation.states.NormalState import NormalState
 from simulation.EventQueue import EventQueue
 from models.person import Person
@@ -16,6 +16,7 @@ from simulation.blocks.Instradamento import Instradamento
 
 from pathlib import Path
 import json
+
 
 
 
@@ -167,6 +168,8 @@ class SimulationEngine:
         Args:
             toSIm (int): Numero di persone da generare nella simulazione.
         """
+
+        rngs.plantSeeds(1)
         self.event_queue = EventQueue()
 
         startingBlock,instradamento, autenticazione, compilazionePrecompilata, invioDiretto, inValutazione,endBlock=self.buildBlocks()

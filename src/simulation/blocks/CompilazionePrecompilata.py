@@ -12,6 +12,7 @@ class CompilazionePrecompilata(SimBlockInterface):
     
     def __init__(self, name, serversNumber,mean,variance,compilationSuccessRate):
        
+        self.stream = 3
         self.name = name
         self.mean = mean
         self.variance = variance
@@ -51,6 +52,8 @@ class CompilazionePrecompilata(SimBlockInterface):
 
 
     def getServiceTime(self,time:datetime)->datetime:
+        from desPython import rngs
+        rngs.selectStream(self.stream)
         a,b=self.lognormal_params
         lognormal = rvgs.Lognormal(a, b)
         return time + timedelta(seconds=lognormal)
@@ -58,6 +61,8 @@ class CompilazionePrecompilata(SimBlockInterface):
 
 
     def getSuccess(self):
+        from desPython import rngs
+        rngs.selectStream(self.stream)
         n=rvgs.Uniform(0,1)
         if n > self.compilationSuccessRate:
             return False

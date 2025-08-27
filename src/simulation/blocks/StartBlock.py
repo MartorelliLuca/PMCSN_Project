@@ -4,6 +4,8 @@ from models.person import Person
 from simulation.Event import Event
 from simulation.states.NormalState import NormalState
 from desPython import rvgs
+from desPython import rngs
+
 
 class StartBlock(SimBlockInterface):
     """Rappresenta un blocco di partenza che genera persone con un tempo di servizio esponenziale.
@@ -23,6 +25,7 @@ class StartBlock(SimBlockInterface):
             start_timestamp (datetime): Il timestamp di inizio della simulazione.
             daily_rates (list[float]): Una lista di tassi medi giornalieri per ogni giorno della simulazione (dal 1 maggio al 30 settembre).
         """
+        self.stream=1
         self.name = name
         self.next = None
         self.generated = 0
@@ -74,7 +77,7 @@ class StartBlock(SimBlockInterface):
         day_rate = self.getDailyRateForDate(time)
         if day_rate <= 0:
             day_rate = 1.0  # fallback per evitare errori
-
+        rngs.selectStream(self.stream)
         exp = rvgs.Exponential(1 / day_rate)
         return time + timedelta(seconds=exp)
 
