@@ -25,11 +25,11 @@ class SimulationEngine:
     """
 
 
-    #getArrivalsRate() che ti crea un array di 365 rates che decidiamo noi con lambda uguale per tutti con 200
+    #getArrivalsRate() che ti crea un array di 365 serviceRates che decidiamo noi con lambda uguale per tutti con 200
     #ci serve per l'analisi del transitorio
     def getArrivalsRatesToInfinite(self) -> list[float]:
         """
-           Legge dal file ../../conf/dataset_arrival_rate.json il valore 'arrival_rate'
+           Legge dal file ../../conf/dataset_arrival_serviceRate.json il valore 'arrival_serviceRate'
            e crea un array di 300 elementi con quel valore ripetuto.
            """
         conf_path = Path(__file__).resolve().parents[2] / "conf" / "dataset_arrival_rate.json"
@@ -43,7 +43,7 @@ class SimulationEngine:
         rates = [rate] * 300
 
         return rates
-    
+
     def getArrivalsRates(self) -> list[float]:
         """
         Legge dal file ../../conf/dataset_arrivals.json i valori 'lambda_per_sec'
@@ -64,11 +64,11 @@ class SimulationEngine:
 
     # Registry: mappa sezione JSON -> (Classe, ordine campi se serve posizionale)
     _REGISTRY = {
-        "inValutazione":            (InValutazione,              ("name", "servers", "mean", "variance", "probability")),
-        "compilazionePrecompilata": (CompilazionePrecompilata,   ("name", "servers", "mean", "variance", "probability")),
+        "inValutazione":            (InValutazione,              ("name", "serversNumber", "mean", "variance", "successProbability")),
+        "compilazionePrecompilata": (CompilazionePrecompilata,   ("name", "serversNumber", "mean", "variance", "successProbability")),
         "invioDiretto":             (InvioDiretto,               ("name", "mean", "variance")),
-        "instradamento":            (Instradamento,              ("name", "rate", "multiServiceRate", "queueMaxLenght")),
-        "autenticazione":           (Autenticazione,             ("name", "serviceRate", "multiServiceRate", "successProbability", "compilazionePrecompilataProbability")),
+        "instradamento":            (Instradamento,              ("name", "serviceRate", "serversNumber", "queueMaxLenght")),
+        "autenticazione":           (Autenticazione,             ("name", "serviceRate", "serversNumber", "successProbability", "compilazionePrecompilataProbability")),
     }
     
     # Alias di chiavi "scritte meglio" -> "come le vuole il costruttore"
@@ -189,11 +189,11 @@ class SimulationEngine:
         # Scrive i risultati finali in formato testuale e JSON.
         endBlock.finalize()
 
-        #getArrivalsRate() che ti crea un array di 365 rates che decidiamo noi con lambda uguale per tutti con 200
+        #getArrivalsRate() che ti crea un array di 365 serviceRates che decidiamo noi con lambda uguale per tutti con 200
         #ci serve per l'analisi del transitorio
         def getArrivalsRatesToInfinite(self) -> list[float]:
             """
-            Legge dal file ../../conf/dataset_arrival_rate.json il valore 'arrival_rate'
+            Legge dal file ../../conf/dataset_arrival_serviceRate.json il valore 'arrival_serviceRate'
             e crea un array di 300 elementi con quel valore ripetuto.
             """
             conf_path = Path(__file__).resolve().parents[2] / "conf" / "dataset_arrival_rate.json"
@@ -205,6 +205,6 @@ class SimulationEngine:
 
             rate = float(data["arrival_rate"])
             rates = [rate] * 300
-
             return rates
+
 

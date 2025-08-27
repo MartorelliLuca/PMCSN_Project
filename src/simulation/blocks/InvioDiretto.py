@@ -15,7 +15,7 @@ class InvioDiretto(SimBlockInterface):
         self.name = name
         self.mean = mean
         self.variance = variance
-        self.multiServiceRate=1
+        self.serversNumber=1
         self.queueLenght = 0
         self.queue=[]
         self.working=0
@@ -62,7 +62,7 @@ class InvioDiretto(SimBlockInterface):
         
         return self.name
     
-    def get_rate(self) -> float:
+    def get_serviceRate(self) -> float:
       
         return self.serviceRate    
     
@@ -74,7 +74,7 @@ class InvioDiretto(SimBlockInterface):
         self.queueLenght += 1
         self.queue.append(person)
         person.append_state(state)
-        if self.working < self.multiServiceRate:
+        if self.working < self.serversNumber:
             events = self.putNextEvenet(timestamp)
             return events if events else []
         return []
@@ -82,7 +82,7 @@ class InvioDiretto(SimBlockInterface):
     def putNextEvenet(self,exitQueueTime) -> list[Event]:
         if len(self.queue) == 0:
             return []
-        if self.working < self.multiServiceRate:
+        if self.working < self.serversNumber:
             self.working += 1
             person=self.queue.pop(0)
             

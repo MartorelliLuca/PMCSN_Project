@@ -64,7 +64,7 @@ Controllo che il **modello simulato rappresenti davvero il sistema reale**.
 ### Scenario:
 
 - 150 macchine → producono $20/h → lavorano 8h/die, 250 giorni l’anno  
-- Quando si guastano, vengono riparate da tecnici  
+- Quando si guastano, vengono ripaserviceRate da tecnici  
 - I tecnici costano $52,000/anno e lavorano 230 giorni  
 - Ogni macchina è **indipendente**, ma i tecnici sono **in coda**: chi si libera, serve la prossima  
 - **Domanda**: quanti tecnici assumere per massimizzare il profitto?

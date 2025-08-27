@@ -11,16 +11,16 @@ class ExponentialService(SimBlockInterface):
     """Rappresenta un blocco di servizio che utilizza un tempo di servizio esponenziale.
     Questo blocco gestisce una coda di persone e fornisce un servizio con un tempo di attesa basato su una distribuzione esponenziale.
     """
-    def __init__(self, name, rate, nextBlock:SimBlockInterface):
+    def __init__(self, name, serviceRate, nextBlock:SimBlockInterface):
         """Inizializza un nuovo blocco di servizio esponenziale.
         
         Args:
             name (str): Il nome del blocco di servizio.
-            rate (float): Il tasso di servizio, che determina la media del tempo di servizio.
+            serviceRate (float): Il tasso di servizio, che determina la media del tempo di servizio.
             nextBlock (SimBlockInterface): Il blocco successivo nella catena di servizi.
         """
         self.name = name
-        self.rate = rate
+        self.serviceRate = serviceRate
         self.queueLenght = 0
         self.queue=[]
         self.working=None
@@ -35,7 +35,7 @@ class ExponentialService(SimBlockInterface):
         Returns:
             datetime: Il timestamp di fine del servizio, calcolato aggiungendo un tempo esponenziale al timestamp di inizio.
         """
-        exp= rvgs.Exponential(1/self.rate)
+        exp= rvgs.Exponential(1/self.serviceRate)
         return time + timedelta(seconds=exp)
     
 
@@ -47,13 +47,13 @@ class ExponentialService(SimBlockInterface):
         """
         return self.name
     
-    def get_rate(self) -> float:
+    def get_serviceRate(self) -> float:
         """Restituisce il tasso di servizio.
         
         Returns:
             float: Il tasso di servizio, che determina la media del tempo di servizio.
         """
-        return self.rate    
+        return self.serviceRate    
     
     def putInQueue(self,person: Person,timestamp: datetime) ->list[Event]:
         """Aggiunge una persona alla coda del blocco di servizio.

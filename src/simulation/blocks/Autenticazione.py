@@ -9,7 +9,7 @@ from datetime import timedelta
 
 class Autenticazione(SimBlockInterface):
     
-    def __init__(self, name, serviceRate,multiServiceRate,successProbability,compilazionePrecompilataProbability):
+    def __init__(self, name, serviceRate,serversNumber,successProbability,compilazionePrecompilataProbability):
         ''' Remember  to set the following blocks:
         - invioDiretto
         - compilazionePrecompilata
@@ -24,7 +24,7 @@ class Autenticazione(SimBlockInterface):
         self.compilazionePrecompilata = None
         self.invioDiretto = None
         self.instradamento = None
-        self.multiServiceRate = multiServiceRate
+        self.serversNumber = serversNumber
         self.compilazionePrecompilataProbability = compilazionePrecompilataProbability
 
     def setInvioDiretto(self,nextBlock:SimBlockInterface):
@@ -72,7 +72,7 @@ class Autenticazione(SimBlockInterface):
         self.queueLenght += 1
         self.queue.append(person)
         person.append_state(state)
-        if self.working < self.multiServiceRate:
+        if self.working < self.serversNumber:
             events = self.putNextEvenet(timestamp)
             return events if events else []
         return []
@@ -81,7 +81,7 @@ class Autenticazione(SimBlockInterface):
 
         if len(self.queue) == 0:
             return []
-        if self.working < self.multiServiceRate:
+        if self.working < self.serversNumber:
             self.working += 1
             person=self.queue.pop(0)
             if person.get_last_state().enqueue_time > exitQueueTime:

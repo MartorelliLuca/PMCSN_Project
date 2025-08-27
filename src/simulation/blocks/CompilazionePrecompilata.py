@@ -10,12 +10,12 @@ import math
 
 class CompilazionePrecompilata(SimBlockInterface):
     
-    def __init__(self, name, multiServiceRate,mean,variance,compilationSuccessRate):
+    def __init__(self, name, serversNumber,mean,variance,compilationSuccessRate):
        
         self.name = name
         self.mean = mean
         self.variance = variance
-        self.multiServiceRate=multiServiceRate
+        self.serversNumber=serversNumber
         self.compilationSuccessRate = compilationSuccessRate
         self.queueLenght = 0
         self.queue=[]
@@ -37,7 +37,7 @@ class CompilazionePrecompilata(SimBlockInterface):
                           media = exp(a + 0.5*b*b)
                        varianza = (exp(b*b) - 1) * exp(2*a + b*b)
 
-        I parametri a e b devono essere scelti in accordo con la media e varianza desiderate
+        I parametri a e b devono essere scelti in accordo con la media e varianza desideserviceRate
         """
     
         # Calcolo dei parametri a e b dalla media e varianza
@@ -79,7 +79,7 @@ class CompilazionePrecompilata(SimBlockInterface):
         self.queueLenght += 1
         self.queue.append(person)
         person.append_state(state)
-        if self.working < self.multiServiceRate:
+        if self.working < self.serversNumber:
             events = self.putNextEvenet(timestamp)
             return events if events else []
         return []
@@ -87,7 +87,7 @@ class CompilazionePrecompilata(SimBlockInterface):
     def putNextEvenet(self,exitQueueTime) -> list[Event]:
         if len(self.queue) == 0:
             return []
-        if self.working < self.multiServiceRate:
+        if self.working < self.serversNumber:
             self.working += 1
             person=self.queue.pop(0)
             if person.get_last_state().enqueue_time > exitQueueTime:

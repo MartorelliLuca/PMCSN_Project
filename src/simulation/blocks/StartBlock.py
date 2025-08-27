@@ -47,8 +47,8 @@ class StartBlock(SimBlockInterface):
         """Restituisce il numero di persone entrate nel sistema in un giorno specifico.
         
         Args:
-            date (datetime): La data per cui si vogliono conoscere le entrate.
-        
+            date (datetime): La data per cui si vogliono conoscere le entrate nel sistema.
+
         Returns:
             int: Il numero di persone entrate nel sistema in quella data.
         """
@@ -139,7 +139,7 @@ class StartBlock(SimBlockInterface):
         # Salvataggio del tasso medio giornaliero in base al giorno in cui è stata generata l'entità
         day_rate = self.getDailyRateForDate(nextServe)
 
-        return Event(nextServe, self.name, self.next, "generated_event", self.serveNext)
+        return Event(nextServe, self.name, self.next, "generate_event", self.serveNext)
 
     def serveNext(self,person) -> list[Event]:
         """Rappresenta l'handler dell'evento, aggiunge la persona alla coda del primo blocco, e genera il prossimo evento.

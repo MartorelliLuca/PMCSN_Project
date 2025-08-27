@@ -13,12 +13,12 @@ from desPython.rvgsCostum import generate_denormalized_bounded_pareto
 
 class InValutazione(SimBlockInterface):
     
-    def __init__(self, name, multiServiceRate,mean,variance,accetpanceRate):
+    def __init__(self, name, serversNumber, mean, variance, accetpanceRate):
        
         self.name = name
         self.mean = mean
         self.variance = variance
-        self.multiServiceRate=multiServiceRate
+        self.serversNumber = serversNumber
         self.accetpanceRate = accetpanceRate
         self.queueLenght = 0
         self.queue=[]
@@ -55,7 +55,7 @@ class InValutazione(SimBlockInterface):
         
         return self.name
     
-    def get_rate(self) -> float:
+    def get_serviceRate(self) -> float:
       
         return self.serviceRate    
     
@@ -67,7 +67,7 @@ class InValutazione(SimBlockInterface):
         self.queueLenght += 1
         self.queue.append(person)
         person.append_state(state)
-        if self.working < self.multiServiceRate:
+        if self.working < self.serversNumber:
             events = self.putNextEvenet(timestamp)
             return events if events else []
         return []
@@ -75,7 +75,7 @@ class InValutazione(SimBlockInterface):
     def putNextEvenet(self,exitQueueTime) -> list[Event]:
         if len(self.queue) == 0:
             return []
-        if self.working < self.multiServiceRate:
+        if self.working < self.serversNumber:
             self.working += 1
             person=self.queue.pop(0)
             if person.get_last_state().enqueue_time > exitQueueTime:

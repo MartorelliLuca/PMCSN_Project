@@ -1,17 +1,17 @@
 {
   "inValutazione": {
     "name": "InValutazione",
-    "servers": 60000,
+    "serversNumber": 60000,
     "mean": 86400,
     "variance": 0,
-    "probability": 0.96
+    "successProbability": 0.96
   },
   "compilazionePrecompilata": {
     "name": "CompilazionePrecompilata",
-    "servers": 1080,
+    "serversNumber": 1080,
     "mean": 600,
     "variance": 3240000,
-    "probability": 0.95
+    "successProbability": 0.95
   },
   "invioDiretto": {
     "name": "InvioDiretto",
@@ -20,14 +20,14 @@
   },
   "instradamento": {
     "name": "Instradamento",
-    "rate": 1.700,
-    "multiServiceRate": 4,
+    "serviceRate": 1.700,
+    "serversNumber": 4,
     "queueMaxLenght": 30000
   },
   "autenticazione": {
     "name": "Autenticazione",
     "serviceRate": 0.33,
-    "multiServiceRate": 16,
+    "serversNumber": 16,
     "successProbability": 0.75,
     "compilazionePrecompilataProbability": 0.80
   },

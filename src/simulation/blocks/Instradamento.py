@@ -9,18 +9,18 @@ from datetime import timedelta
 
 class Instradamento(SimBlockInterface):
     
-    def __init__(self, name, rate,multiServiceRate,queueMaxLenght):
+    def __init__(self, name, serviceRate,serversNumber,queueMaxLenght):
         
         self.endBlock = None
        
         self.queueMaxLenght = queueMaxLenght
         self.name = name
-        self.rate = rate
+        self.serviceRate = serviceRate
         self.queueLenght = 0
         self.queue=[]
         self.working=0
         self.nextBlock = None
-        self.multiServiceRate = multiServiceRate
+        self.serversNumber = serversNumber
 
     def setQueueFullFallBackBlock(self,endBlock:SimBlockInterface):
         """Imposta il blocco finale da chiamare quando la coda è piena."""
@@ -32,7 +32,7 @@ class Instradamento(SimBlockInterface):
 
     def getServiceTime(self,time:datetime)->datetime:
       
-        exp= rvgs.Exponential(1/self.rate)
+        exp= rvgs.Exponential(1/self.serviceRate)
         return time + timedelta(seconds=exp)
     
 
@@ -40,9 +40,9 @@ class Instradamento(SimBlockInterface):
         
         return self.name
     
-    def get_rate(self) -> float:
+    def get_serviceRate(self) -> float:
       
-        return self.rate    
+        return self.serviceRate    
     
     def putInQueue(self,person: Person,timestamp: datetime) ->list[Event]:
 
@@ -54,7 +54,7 @@ class Instradamento(SimBlockInterface):
             event= self.endBlock.putInQueue(person, timestamp)
             return event if event else []
         self.queueLenght += 1
-        if self.working < self.multiServiceRate:
+        if self.working < self.serversNumber:
             events = self.putNextEvenet(timestamp)
             return events if events else []
         return []
@@ -63,7 +63,7 @@ class Instradamento(SimBlockInterface):
 
         if len(self.queue) == 0:
             return []
-        if self.working < self.multiServiceRate:
+        if self.working < self.serversNumber:
             self.working += 1
             person=self.queue.pop(0)
            
