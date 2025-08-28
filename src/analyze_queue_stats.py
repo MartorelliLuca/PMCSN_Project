@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Script per analizzare e visualizzare le statistiche delle code dal file daily_stats.json
 Genera grafici per ogni coda mostrando distribuzione dei tempi di attesa e di esecuzione
