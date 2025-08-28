@@ -7,7 +7,7 @@ from desPython import rvgs
 from datetime import timedelta
 import math
 
-from desPython.rvgsCostum import generate_denormalized_bounded_pareto
+from desPython.rvgsCostum import generate_denormalized_bounded_pareto,find_best_normalized_pareto_params
 
 
 
@@ -26,7 +26,15 @@ class InValutazione(SimBlockInterface):
         self.working=0
         self.instradamento = None
         self.end=None
-
+        self.lower_bound=mean*0.01
+        self.upper_bound=mean*6
+        self.a,self.k = find_best_normalized_pareto_params(
+            original_mean=mean,
+            original_l=self.lower_bound,
+            original_h=self.upper_bound,
+            save_plot=True,
+            verbose=True  # Suppress print messages
+        )
 
         
     def setInstradamento(self,instradamento:SimBlockInterface):
@@ -43,7 +51,7 @@ class InValutazione(SimBlockInterface):
     def getServiceTime(self,time:datetime)->datetime:
         from desPython import rngs
         rngs.selectStream(self.stream)
-        lognormal = generate_denormalized_bounded_pareto(1.2,0.01,0.1,1.0,8640,259200)
+        lognormal = generate_denormalized_bounded_pareto(self.a,self.k,0.1,1.0,self.lower_bound,self.upper_bound)
         return time + timedelta(seconds=lognormal)
     
 
