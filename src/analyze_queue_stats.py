@@ -127,6 +127,118 @@ def plot_queue_length_over_time(queue_name, queue_lengths, ax):
             transform=ax.transAxes, verticalalignment='top',
             bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
 
+def plot_wait_times_over_time(queue_name, queue_times, ax):
+    """Plotta i tempi di attesa nel tempo per identificare i periodi critici"""
+    if not queue_times:
+        ax.text(0.5, 0.5, 'Nessun dato di attesa', 
+                transform=ax.transAxes, ha='center', va='center')
+        return
+    
+    # Crea un array di indici temporali
+    time_indices = range(len(queue_times))
+    
+    # Plotta i tempi di attesa
+    ax.plot(time_indices, queue_times, alpha=0.7, color='red', linewidth=1)
+    
+    # Aggiungi una media mobile per evidenziare i trend
+    if len(queue_times) > 10:
+        window_size = max(10, len(queue_times) // 50)  # Finestra adattiva
+        moving_avg = []
+        for i in range(len(queue_times)):
+            start_idx = max(0, i - window_size // 2)
+            end_idx = min(len(queue_times), i + window_size // 2 + 1)
+            moving_avg.append(np.mean(queue_times[start_idx:end_idx]))
+        
+        ax.plot(time_indices, moving_avg, color='darkred', linewidth=2, 
+                label=f'Media Mobile (finestra={window_size})')
+        ax.legend(loc='upper right')
+    
+    ax.set_title(f'{queue_name} - Tempi di Attesa nel Tempo')
+    ax.set_xlabel('Evento # (Sequenza Temporale)')
+    ax.set_ylabel('Tempo di Attesa (secondi)')
+    ax.grid(True, alpha=0.3)
+    
+    # Evidenzia i periodi critici (sopra il 75° percentile)
+    if len(queue_times) > 4:
+        threshold_75 = np.percentile(queue_times, 75)
+        threshold_90 = np.percentile(queue_times, 90)
+        
+        # Colora lo sfondo per i periodi critici
+        for i, wait_time in enumerate(queue_times):
+            if wait_time > threshold_90:
+                ax.axvspan(i-0.5, i+0.5, alpha=0.3, color='red', label='Critico (>90%)' if i == 0 else "")
+            elif wait_time > threshold_75:
+                ax.axvspan(i-0.5, i+0.5, alpha=0.2, color='orange', label='Alto (>75%)' if i == 0 else "")
+    
+    # Aggiungi statistiche
+    mean_time = np.mean(queue_times)
+    max_time = np.max(queue_times)
+    std_time = np.std(queue_times)
+    max_idx = np.argmax(queue_times)
+    
+    stats_text = f'Media: {mean_time:.2f}s\nMax: {max_time:.2f}s (evento #{max_idx})\nStd: {std_time:.2f}s'
+    if len(queue_times) > 4:
+        stats_text += f'\n75° perc: {threshold_75:.2f}s\n90° perc: {threshold_90:.2f}s'
+    
+    ax.text(0.02, 0.98, stats_text, 
+            transform=ax.transAxes, verticalalignment='top',
+            bbox=dict(boxstyle='round', facecolor='white', alpha=0.9))
+
+def plot_temporal_analysis(queue_name, queue_data, ax):
+    """Analizza i pattern temporali dei tempi di attesa"""
+    queue_times = queue_data['queue_times']
+    
+    if not queue_times or len(queue_times) < 10:
+        ax.text(0.5, 0.5, 'Dati insufficienti per analisi temporale', 
+                transform=ax.transAxes, ha='center', va='center')
+        return
+    
+    # Dividi i dati in segmenti temporali per analizzare i pattern
+    n_segments = min(20, len(queue_times) // 10)  # Massimo 20 segmenti
+    if n_segments < 2:
+        n_segments = 2
+    
+    segment_size = len(queue_times) // n_segments
+    segment_means = []
+    segment_labels = []
+    
+    for i in range(n_segments):
+        start_idx = i * segment_size
+        end_idx = (i + 1) * segment_size if i < n_segments - 1 else len(queue_times)
+        segment_data = queue_times[start_idx:end_idx]
+        
+        if segment_data:
+            segment_means.append(np.mean(segment_data))
+            segment_labels.append(f'{i+1}')
+        else:
+            segment_means.append(0)
+            segment_labels.append(f'{i+1}')
+    
+    # Crea il grafico a barre dei segmenti temporali
+    colors = ['red' if mean > np.mean(queue_times) * 1.5 else 
+              'orange' if mean > np.mean(queue_times) * 1.2 else 
+              'green' for mean in segment_means]
+    
+    bars = ax.bar(segment_labels, segment_means, color=colors, alpha=0.7)
+    ax.set_title(f'{queue_name} - Analisi Periodi Temporali')
+    ax.set_xlabel('Periodo Temporale')
+    ax.set_ylabel('Tempo Attesa Medio (s)')
+    ax.grid(True, alpha=0.3)
+    
+    # Aggiungi una linea di riferimento per la media globale
+    global_mean = np.mean(queue_times)
+    ax.axhline(y=global_mean, color='black', linestyle='--', alpha=0.7, 
+               label=f'Media Globale: {global_mean:.2f}s')
+    ax.legend()
+    
+    # Identifica i periodi più critici
+    max_idx = np.argmax(segment_means)
+    max_value = segment_means[max_idx]
+    
+    ax.text(0.02, 0.98, f'Periodo più critico: #{max_idx+1}\nTempo medio: {max_value:.2f}s', 
+            transform=ax.transAxes, verticalalignment='top',
+            bbox=dict(boxstyle='round', facecolor='white', alpha=0.9))
+
 def plot_boxplot_comparison(queue_data, ax, data_type='queue_times'):
     """Crea un boxplot per confrontare le code"""
     data_to_plot = []
@@ -185,30 +297,36 @@ def create_comprehensive_analysis(filename):
     # 1. Grafici individuali per ogni coda
     for i, queue_name in enumerate(queue_names):
         print(f"  Generando grafici per {queue_name}...")
-        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(15, 10))
+        fig, axes = plt.subplots(2, 3, figsize=(20, 12))  # Cambiato da 2x2 a 2x3
         fig.suptitle(f'Analisi Completa - {queue_name}', fontsize=16)
         
         # Distribuzione tempi di attesa
-        plot_queue_time_distribution(queue_name, queue_data[queue_name]['queue_times'], ax1)
+        plot_queue_time_distribution(queue_name, queue_data[queue_name]['queue_times'], axes[0,0])
         
         # Distribuzione tempi di esecuzione
-        plot_execution_time_distribution(queue_name, queue_data[queue_name]['execution_times'], ax2)
+        plot_execution_time_distribution(queue_name, queue_data[queue_name]['execution_times'], axes[0,1])
+        
+        # Tempi di attesa nel tempo (NUOVO GRAFICO)
+        plot_wait_times_over_time(queue_name, queue_data[queue_name]['queue_times'], axes[0,2])
         
         # Lunghezza coda nel tempo
-        plot_queue_length_over_time(queue_name, queue_data[queue_name]['queue_lengths'], ax3)
+        plot_queue_length_over_time(queue_name, queue_data[queue_name]['queue_lengths'], axes[1,0])
         
         # Scatter plot: tempo attesa vs tempo esecuzione
         queue_times = queue_data[queue_name]['queue_times']
         exec_times = queue_data[queue_name]['execution_times']
         if queue_times and exec_times and len(queue_times) == len(exec_times):
-            ax4.scatter(queue_times, exec_times, alpha=0.6)
-            ax4.set_xlabel('Tempo di Attesa (s)')
-            ax4.set_ylabel('Tempo di Esecuzione (s)')
-            ax4.set_title('Correlazione Attesa vs Esecuzione')
-            ax4.grid(True, alpha=0.3)
+            axes[1,1].scatter(queue_times, exec_times, alpha=0.6)
+            axes[1,1].set_xlabel('Tempo di Attesa (s)')
+            axes[1,1].set_ylabel('Tempo di Esecuzione (s)')
+            axes[1,1].set_title('Correlazione Attesa vs Esecuzione')
+            axes[1,1].grid(True, alpha=0.3)
         else:
-            ax4.text(0.5, 0.5, 'Dati non correlabili', 
-                    transform=ax4.transAxes, ha='center', va='center')
+            axes[1,1].text(0.5, 0.5, 'Dati non correlabili', 
+                    transform=axes[1,1].transAxes, ha='center', va='center')
+        
+        # Analisi dei periodi critici (NUOVO GRAFICO)
+        plot_temporal_analysis(queue_name, queue_data[queue_name], axes[1,2])
         
         plt.tight_layout()
         plt.savefig(f'{output_dir}/analisi_{queue_name.lower()}.png', dpi=300, bbox_inches='tight')
@@ -292,6 +410,21 @@ def create_comprehensive_analysis(filename):
     plt.savefig(f'{output_dir}/utilizzo_code.png', dpi=300, bbox_inches='tight')
     plt.close()
     
+    # 4. Grafico dedicato ai pattern temporali di tutte le code
+    print("  Generando analisi pattern temporali...")
+    fig, axes = plt.subplots(len(queue_names), 1, figsize=(15, 4 * len(queue_names)))
+    if len(queue_names) == 1:
+        axes = [axes]  # Assicurati che axes sia sempre una lista
+    
+    fig.suptitle('Analisi Temporale Dettagliata - Tempi di Attesa nel Tempo', fontsize=16)
+    
+    for idx, (queue_name, data) in enumerate(queue_data.items()):
+        plot_wait_times_over_time(queue_name, data['queue_times'], axes[idx])
+    
+    plt.tight_layout()
+    plt.savefig(f'{output_dir}/trend_temporali.png', dpi=300, bbox_inches='tight')
+    plt.close()
+    
     return queue_data, daily_summaries, output_dir
 
 if __name__ == "__main__":
@@ -329,6 +462,7 @@ if __name__ == "__main__":
             print(f"- {output_dir}/analisi_{queue_name.lower()}.png")
         print(f"- {output_dir}/confronto_code.png")
         print(f"- {output_dir}/utilizzo_code.png")
+        print(f"- {output_dir}/trend_temporali.png")  # Nuovo file
         
     except FileNotFoundError:
         print(f"Errore: File {stats_file} non trovato!")
