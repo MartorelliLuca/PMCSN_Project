@@ -13,9 +13,9 @@ ARRIVAL STATISTICS:
   Standard Deviation: 11693
 
 ARRIVAL RATE (λ/sec) STATISTICS:
-  Average λ/sec: 0.1348
+  Average λ/sec: 0.1846
   Maximum λ/sec: 0.4448
-  Minimum λ/sec: 0.0083
+  Minimum λ/sec: 0.0734
 
 WEEKLY PATTERNS:
   Friday: 12144 arrivals
