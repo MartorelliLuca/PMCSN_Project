@@ -1,7 +1,8 @@
 {
   "inValutazione": {
     "name": "InValutazione",
-    "serversNumber": 10,
+    "dipendenti": 10,
+    "pratichePerDipendente": 5,
     "mean": 120,
     "variance": 3600,
     "successProbability": 0.96

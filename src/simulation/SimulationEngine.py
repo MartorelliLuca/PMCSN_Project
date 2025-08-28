@@ -65,7 +65,7 @@ class SimulationEngine:
 
     # Registry: mappa sezione JSON -> (Classe, ordine campi se serve posizionale)
     _REGISTRY = {
-        "inValutazione":            (InValutazione,              ("name", "serversNumber", "mean", "variance", "successProbability")),
+        "inValutazione":            (InValutazione,              ("name", "dipendenti","pratichePerDipendente", "mean", "variance", "successProbability")),
         "compilazionePrecompilata": (CompilazionePrecompilata,   ("name", "serversNumber", "mean", "variance", "successProbability")),
         "invioDiretto":             (InvioDiretto,               ("name", "mean", "variance")),
         "instradamento":            (Instradamento,              ("name", "serviceRate", "serversNumber", "queueMaxLenght")),
