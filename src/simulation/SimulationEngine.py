@@ -30,10 +30,10 @@ class SimulationEngine:
     #ci serve per l'analisi del transitorio
     def getArrivalsRatesToInfinite(self) -> list[float]:
         """
-           Legge dal file ../../conf/dataset_arrival_serviceRate.json il valore 'arrival_serviceRate'
+           Legge dal file ../../conf/arrival_rate.json il valore 'arrival_rate'
            e crea un array di 300 elementi con quel valore ripetuto.
            """
-        conf_path = Path(__file__).resolve().parents[2] / "conf" / "dataset_arrival_rate.json"
+        conf_path = Path(__file__).resolve().parents[2] / "conf" / "arrival_rate.json"
         if not conf_path.exists():
             raise FileNotFoundError(f"File non trovato: {conf_path}")
 

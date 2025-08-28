@@ -33,7 +33,7 @@ class InValutazione(SimBlockInterface):
             original_l=self.lower_bound,
             original_h=self.upper_bound,
             save_plot=True,
-            verbose=True  # Suppress print messages
+            verbose=False  # Suppress print messages
         )
 
         
