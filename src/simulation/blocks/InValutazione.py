@@ -13,14 +13,14 @@ from desPython.rvgsCostum import generate_denormalized_bounded_pareto,find_best_
 
 class InValutazione(SimBlockInterface):
     
-    def __init__(self, name, dipendenti,pratichePerDipendente, mean, variance, accetpanceRate):
+    def __init__(self, name, dipendenti,pratichePerDipendente, mean, variance, successProbability):
        
         self.stream = 5
         self.name = name
         self.mean = mean
         self.variance = variance
         self.serversNumber = dipendenti*pratichePerDipendente
-        self.accetpanceRate = accetpanceRate
+        self.accetpanceRate = successProbability
         self.queueLenght = 0
         self.queue=[]
         self.working=0

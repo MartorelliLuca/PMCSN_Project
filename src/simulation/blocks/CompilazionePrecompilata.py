@@ -10,14 +10,14 @@ import math
 
 class CompilazionePrecompilata(SimBlockInterface):
     
-    def __init__(self, name, serversNumber,mean,variance,compilationSuccessRate):
+    def __init__(self, name, serversNumber,mean,variance,successProbability):
        
         self.stream = 3
         self.name = name
         self.mean = mean
         self.variance = variance
         self.serversNumber=serversNumber
-        self.compilationSuccessRate = compilationSuccessRate
+        self.compilationSuccessRate = successProbability
         self.queueLenght = 0
         self.queue=[]
         self.working=0

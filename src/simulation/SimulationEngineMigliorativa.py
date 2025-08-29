@@ -9,7 +9,7 @@ from simulation.blocks.ExponentialService import ExponentialService
 from simulation.blocks.StartBlock import StartBlock
 from simulation.blocks.InvioDiretto import InvioDiretto
 from simulation.blocks.CompilazionePrecompilata import CompilazionePrecompilata
-from simulation.blocks.InValutazione import InValutazione
+from simulation.blocks.InValutazioneCodaPrioritaNP import InValutazioneCodaPrioritaNP
 from simulation.blocks.Autenticazione import Autenticazione
 from simulation.blocks.Instradamento import Instradamento
 
@@ -18,10 +18,9 @@ import json
 
 
 class SimulationEngine:
-    """Gestisce l'esecuzione della simulazione, orchestrando i blocchi di servizio e gli eventi."""
+    """Versione migliorativa con coda prioritaria NP."""
 
     def getArrivalsRatesToInfinite(self) -> list[float]:
-        """Crea un array costante di arrivi per l’analisi del transitorio."""
         conf_path = Path(__file__).resolve().parents[2] / "conf" / "arrival_rate.json"
         if not conf_path.exists():
             raise FileNotFoundError(f"File non trovato: {conf_path}")
@@ -29,11 +28,9 @@ class SimulationEngine:
         with conf_path.open("r", encoding="utf-8") as f:
             data = json.load(f)
 
-        rate = float(data["arrival_rate"])
-        return [rate] * 300
+        return [float(data["arrival_rate"])] * 300
 
     def getArrivalsRates(self) -> list[float]:
-        """Legge dal dataset i valori di arrivo giornalieri."""
         conf_path = Path(__file__).resolve().parents[2] / "conf" / "dataset_arrivals.json"
         if not conf_path.exists():
             raise FileNotFoundError(f"File non trovato: {conf_path}")
@@ -41,16 +38,14 @@ class SimulationEngine:
         with conf_path.open("r", encoding="utf-8") as f:
             data = json.load(f)
 
-        days = data.get("days", [])
-        return [float(day["lambda_per_sec"]) for day in days if "lambda_per_sec" in day]
+        return [float(day["lambda_per_sec"]) for day in data.get("days", []) if "lambda_per_sec" in day]
 
-    # Registry dei blocchi
     _REGISTRY = {
-        "inValutazione":            (InValutazione,              ("name", "dipendenti","pratichePerDipendente", "mean", "variance", "successProbability")),
-        "compilazionePrecompilata": (CompilazionePrecompilata,   ("name", "serversNumber", "mean", "variance", "successProbability")),
-        "invioDiretto":             (InvioDiretto,               ("name", "mean", "variance")),
-        "instradamento":            (Instradamento,              ("name", "serviceRate", "serversNumber", "queueMaxLenght")),
-        "autenticazione":           (Autenticazione,             ("name", "serviceRate", "serversNumber", "successProbability", "compilazionePrecompilataProbability")),
+        "inValutazioneCodaPrioritariaNP": (InValutazioneCodaPrioritaNP, ("name", "dipendenti","pratichePerDipendente", "mean", "variance", "successProbability")),
+        "compilazionePrecompilata": (CompilazionePrecompilata, ("name", "serversNumber", "mean", "variance", "successProbability")),
+        "invioDiretto": (InvioDiretto, ("name", "mean", "variance")),
+        "instradamento": (Instradamento, ("name", "serviceRate", "serversNumber", "queueMaxLenght")),
+        "autenticazione": (Autenticazione, ("name", "serviceRate", "serversNumber", "successProbability", "compilazionePrecompilataProbability")),
     }
 
     _FIELD_ALIASES = {
@@ -65,16 +60,8 @@ class SimulationEngine:
         return data
 
     def _instantiate(self, cfg: dict, key: str):
-        if key not in cfg:
-            raise KeyError(f"Manca la sezione '{key}' nel JSON.")
-
         cls, fields = self._REGISTRY[key]
         data = self._normalize_section(cfg[key], key)
-
-        missing = [f for f in fields if f not in data]
-        if missing:
-            raise ValueError(f"Nella sezione '{key}' mancano i campi: {missing}")
-
         return cls(**{f: data[f] for f in fields})
 
     def buildBlocks(self):
@@ -85,12 +72,12 @@ class SimulationEngine:
         with cfg_path.open("r", encoding="utf-8") as f:
             cfg = json.load(f)
 
-        endBlock                 = EndBlock()
-        inValutazione            = self._instantiate(cfg, "inValutazione")
+        endBlock = EndBlock()
+        inValutazioneCodaPrioritariaNP = self._instantiate(cfg, "inValutazioneCodaPrioritariaNP")
         compilazionePrecompilata = self._instantiate(cfg, "compilazionePrecompilata")
-        invioDiretto             = self._instantiate(cfg, "invioDiretto")
-        instradamento            = self._instantiate(cfg, "instradamento")
-        autenticazione           = self._instantiate(cfg, "autenticazione")
+        invioDiretto = self._instantiate(cfg, "invioDiretto")
+        instradamento = self._instantiate(cfg, "instradamento")
+        autenticazione = self._instantiate(cfg, "autenticazione")
 
         start_date = datetime.fromisoformat(cfg["date"]["start"])
         end_date   = datetime.fromisoformat(cfg["date"]["end"]) + timedelta(days=1)
@@ -104,24 +91,23 @@ class SimulationEngine:
         # Wiring
         startingBlock.setNextBlock(instradamento)
         instradamento.setQueueFullFallBackBlock(endBlock)
-        inValutazione.setInstradamento(instradamento)
+        inValutazioneCodaPrioritariaNP.setInstradamento(instradamento)
         autenticazione.setInstradamento(instradamento)
         autenticazione.setCompilazione(compilazionePrecompilata)
         autenticazione.setInvioDiretto(invioDiretto)
-        compilazionePrecompilata.setNextBlock(inValutazione)
-        invioDiretto.setNextBlock(inValutazione)
-        inValutazione.setEnd(endBlock)
+        compilazionePrecompilata.setNextBlock(inValutazioneCodaPrioritariaNP)
+        invioDiretto.setNextBlock(inValutazioneCodaPrioritariaNP)
+        inValutazioneCodaPrioritariaNP.setEnd(endBlock)
         instradamento.setNextBlock(autenticazione)
         endBlock.setStartBlock(startingBlock)
 
-        return startingBlock, instradamento, autenticazione, compilazionePrecompilata, invioDiretto, inValutazione, endBlock
+        return startingBlock, instradamento, autenticazione, compilazionePrecompilata, invioDiretto, inValutazioneCodaPrioritariaNP, endBlock
 
     def normale(self, daily_rates: list[float] = None):
-        """Avvia la simulazione con i tassi di arrivo specificati."""
         rngs.plantSeeds(1)
         self.event_queue = EventQueue()
 
-        startingBlock, instradamento, autenticazione, compilazionePrecompilata, invioDiretto, inValutazione, endBlock = self.buildBlocks()
+        startingBlock, instradamento, autenticazione, compilazionePrecompilata, invioDiretto, inValutazioneCodaPrioritariaNP, endBlock = self.buildBlocks()
 
         if daily_rates is None:
             daily_rates = self.getArrivalsRates()

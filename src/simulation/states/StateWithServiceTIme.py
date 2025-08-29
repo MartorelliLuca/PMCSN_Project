@@ -1,4 +1,4 @@
-from states.NormalState import NormalState
+from simulation.states.NormalState import NormalState
 from datetime import datetime
 
 class StateWithServiceTime(NormalState):
