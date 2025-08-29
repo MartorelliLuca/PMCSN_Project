@@ -13,16 +13,25 @@ from desPython.rvgsCostum import generate_denormalized_bounded_pareto,find_best_
 
 class InValutazioneCodaPrioritaNP(SimBlockInterface):
     
-    def __init__(self, name, dipendenti,pratichePerDipendente, mean, variance, accetpanceRate):
+    def __init__(self, name, dipendenti,pratichePerDipendente, mean, variance, successProbability):
        
         self.stream = 5
         self.name = name
         self.mean = mean
         self.variance = variance
         self.serversNumber = dipendenti*pratichePerDipendente
-        self.accetpanceRate = accetpanceRate
-        self.queueLenght = 0
-        self.queue=[]
+        self.accetpanceRate = successProbability
+        self.queueLenght = {
+            "Diretta":0,
+            "Pesante":0,
+            "Leggera":0
+        }
+        self.queue=  {
+            "Diretta":[],
+            "Pesante":[],
+            "Leggera":[]
+        }
+
         self.working=0
         self.instradamento = None
         self.end=None
@@ -47,8 +56,14 @@ class InValutazioneCodaPrioritaNP(SimBlockInterface):
 
     
 
+    def getServiceTime(self)->datetime:
+        from desPython import rngs
+        rngs.selectStream(self.stream)
+        lognormal = generate_denormalized_bounded_pareto(self.a,self.k,0.1,1.0,self.lower_bound,self.upper_bound)
+        return timedelta(seconds=lognormal)
 
-    def getServiceTime(self,time:datetime)->datetime:
+
+    def getServiceTimeOld(self,time:datetime)->datetime:
         from desPython import rngs
         rngs.selectStream(self.stream)
         lognormal = generate_denormalized_bounded_pareto(self.a,self.k,0.1,1.0,self.lower_bound,self.upper_bound)
@@ -73,29 +88,59 @@ class InValutazioneCodaPrioritaNP(SimBlockInterface):
         return self.serviceRate    
     
     
-
+    
 
     def putInQueue(self,person: Person,timestamp: datetime) ->list[Event]:
-        state=NormalState(self.name, timestamp, self.queueLenght)
-        self.queueLenght += 1
-        self.queue.append(person)
+        comingFrom=person.get_last_state().get_service_name()
+        execTime=self.getServiceTime()
+        queueLength=0
+        queueName=""    
+        if comingFrom=="InvioDiretto":
+                queueName="Diretta"            
+        else:
+            if execTime.total_seconds()>(self.mean*1.5):
+                queueName="Pesante"
+            else:
+                queueName="Leggera"
+
+        queueLength=self.queueLenght[queueName]
+        self.queueLenght[queueName] += 1
+        
+        state=StateWithServiceTime(self.name, timestamp, queueLength,execTime,queueName)
+        
+        self.queue[queueName].append(person)    
+        
         person.append_state(state)
+        
         if self.working < self.serversNumber:
             events = self.putNextEvent(timestamp)
             return events if events else []
         return []
 
     def putNextEvent(self,exitQueueTime) -> list[Event]:
-        if len(self.queue) == 0:
-            return []
+
+        queueName=""
+        if self.queueLenght["Diretta"]>0:
+            queueName="Diretta"
+        else:
+            if self.queueLenght["Leggera"]>0:
+                queueName="Leggera"
+            else:
+                if self.queueLenght["Pesante"]>0:
+                    queueName="Pesante"
+                else:
+                    return []
+        
+        
+
         if self.working < self.serversNumber:
             self.working += 1
-            person=self.queue.pop(0)
-            if person.get_last_state().enqueue_time > exitQueueTime:
-                exitQueueTime = person.get_last_state().enqueue_time
+            person=self.queue[queueName].pop(0)
+            serviceTime=person.get_last_state().getServiceTime()
             person.get_last_state().service_start_time = exitQueueTime
-            self.queueLenght -= 1
-            person.get_last_state().service_end_time = self.getServiceTime(exitQueueTime)
+            self.queueLenght[queueName] -= 1
+
+            person.get_last_state().service_end_time = exitQueueTime + serviceTime
             return [Event(person.get_last_state().service_end_time,  self.name,person, "queue_empty_put_to_work", self.serveNext)]
         return []
 

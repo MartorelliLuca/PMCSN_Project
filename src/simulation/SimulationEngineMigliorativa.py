@@ -41,7 +41,7 @@ class SimulationEngine:
         return [float(day["lambda_per_sec"]) for day in data.get("days", []) if "lambda_per_sec" in day]
 
     _REGISTRY = {
-        "inValutazioneCodaPrioritariaNP": (InValutazioneCodaPrioritaNP, ("name", "dipendenti","pratichePerDipendente", "mean", "variance", "successProbability")),
+        "inValutazione": (InValutazioneCodaPrioritaNP, ("name", "dipendenti","pratichePerDipendente", "mean", "variance", "successProbability")),
         "compilazionePrecompilata": (CompilazionePrecompilata, ("name", "serversNumber", "mean", "variance", "successProbability")),
         "invioDiretto": (InvioDiretto, ("name", "mean", "variance")),
         "instradamento": (Instradamento, ("name", "serviceRate", "serversNumber", "queueMaxLenght")),
@@ -73,7 +73,7 @@ class SimulationEngine:
             cfg = json.load(f)
 
         endBlock = EndBlock()
-        inValutazioneCodaPrioritariaNP = self._instantiate(cfg, "inValutazioneCodaPrioritariaNP")
+        inValutazioneCodaPrioritariaNP = self._instantiate(cfg, "inValutazione")  # Use the JSON field name
         compilazionePrecompilata = self._instantiate(cfg, "compilazionePrecompilata")
         invioDiretto = self._instantiate(cfg, "invioDiretto")
         instradamento = self._instantiate(cfg, "instradamento")
