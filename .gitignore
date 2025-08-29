@@ -57,3 +57,5 @@ ehthumbs.db
 Thumbs.db
 simulation_results.*
 src/daily_stats.json
+**/graphs/
+
