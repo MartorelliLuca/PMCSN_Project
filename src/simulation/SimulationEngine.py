@@ -175,6 +175,7 @@ class SimulationEngine:
         startingBlock,instradamento, autenticazione, compilazionePrecompilata, invioDiretto, inValutazione,endBlock=self.buildBlocks()
 
         daily_rates = self.getArrivalsRates()
+        #daily_rates = self.getArrivalsRatesToInfinite()
 
         startingBlock.setDailyRates(daily_rates)
         startingBlock.setNextBlock(instradamento)
