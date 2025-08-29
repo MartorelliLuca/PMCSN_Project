@@ -73,11 +73,11 @@ class ExponentialService(SimBlockInterface):
         self.queue.append(person)
         person.append_state(state)
         if self.working is None:
-            events = self.putNextEvenet(timestamp)
+            events = self.putNextEvent(timestamp)
             return events if events else []
         return []
 
-    def putNextEvenet(self,exitQueueTime) -> list[Event]:
+    def putNextEvent(self,exitQueueTime) -> list[Event]:
         """Controlla se ci sono persone in coda e, se il blocco di servizio è vuoto, inizia il servizio della prima persona in coda.
         Se il blocco è vuoto, crea un evento che rappresenta l'inizio del servizio della persona in coda.
         
@@ -111,7 +111,7 @@ class ExponentialService(SimBlockInterface):
         endTime = serving.get_last_state().service_end_time
         events=[]
         if self.queue:
-            event = self.putNextEvenet(endTime)
+            event = self.putNextEvent(endTime)
             if event:
                 events.extend(event)
         event=self.nextBlock.putInQueue(serving, endTime)

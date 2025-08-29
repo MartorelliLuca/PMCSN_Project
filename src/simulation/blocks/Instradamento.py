@@ -57,11 +57,11 @@ class Instradamento(SimBlockInterface):
             return event if event else []
         self.queueLenght += 1
         if self.working < self.serversNumber:
-            events = self.putNextEvenet(timestamp)
+            events = self.putNextEvent(timestamp)
             return events if events else []
         return []
 
-    def putNextEvenet(self,exitQueueTime) -> list[Event]:
+    def putNextEvent(self,exitQueueTime) -> list[Event]:
 
         if len(self.queue) == 0:
             return []
@@ -86,7 +86,7 @@ class Instradamento(SimBlockInterface):
         endTime = serving.get_last_state().service_end_time
         events=[]
         if self.queue:
-            event = self.putNextEvenet(endTime)
+            event = self.putNextEvent(endTime)
             if event:
                 events.extend(event)
         event=self.nextBlock.putInQueue(serving, endTime)

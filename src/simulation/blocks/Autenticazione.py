@@ -79,11 +79,11 @@ class Autenticazione(SimBlockInterface):
         self.queue.append(person)
         person.append_state(state)
         if self.working < self.serversNumber:
-            events = self.putNextEvenet(timestamp)
+            events = self.putNextEvent(timestamp)
             return events if events else []
         return []
 
-    def putNextEvenet(self,exitQueueTime) -> list[Event]:
+    def putNextEvent(self,exitQueueTime) -> list[Event]:
 
         if len(self.queue) == 0:
             return []
@@ -107,7 +107,7 @@ class Autenticazione(SimBlockInterface):
         endTime = serving.get_last_state().service_end_time
         events=[]
         if self.queue:
-            event = self.putNextEvenet(endTime)
+            event = self.putNextEvent(endTime)
             if event:
                 events.extend(event)
 

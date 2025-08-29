@@ -23,7 +23,7 @@ class SimBlockInterface:
         """
         pass
     
-    def putNextEvenet(self, exitQueueTime) -> list[Event]:
+    def putNextEvent(self, exitQueueTime) -> list[Event]:
         """Mette la prossima persona in elaborazione.
         
         Args:

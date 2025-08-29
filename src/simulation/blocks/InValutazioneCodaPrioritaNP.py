@@ -2,64 +2,67 @@ from interfaces.SimBlockInterface import SimBlockInterface
 from datetime import datetime
 from models.person import Person
 from simulation.Event import Event
-from simulation.states.NormalState import NormalState
+from simulation.states.StateWithServiceTIme import StateWithServiceTime
 from desPython import rvgs
 from datetime import timedelta
 import math
 
+from desPython.rvgsCostum import generate_denormalized_bounded_pareto,find_best_normalized_pareto_params
 
-class InvioDiretto(SimBlockInterface):
+
+
+class InValutazioneCodaPrioritaNP(SimBlockInterface):
     
-    def __init__(self, name, mean,variance):
+    def __init__(self, name, dipendenti,pratichePerDipendente, mean, variance, accetpanceRate):
        
-        self.stream = 6
+        self.stream = 5
         self.name = name
         self.mean = mean
         self.variance = variance
-        self.serversNumber=1
+        self.serversNumber = dipendenti*pratichePerDipendente
+        self.accetpanceRate = accetpanceRate
         self.queueLenght = 0
         self.queue=[]
         self.working=0
-        self.nextBlock = None
-        self.lognormal_params = self.calculateParameters()
-
+        self.instradamento = None
+        self.end=None
+        self.lower_bound=mean*0.01
+        self.upper_bound=mean*6
+        self.a,self.k = find_best_normalized_pareto_params(
+            original_mean=mean,
+            original_l=self.lower_bound,
+            original_h=self.upper_bound,
+            save_plot=True,
+            verbose=True  # Suppress print messages
+        )
 
         
-    def setNextBlock(self,nextBlock:SimBlockInterface):
-        """Imposta il blocco successivo da chiamare."""
-        self.nextBlock = nextBlock
+    def setInstradamento(self,instradamento:SimBlockInterface):
+        """Imposta il blocco di instradamento."""
+        self.instradamento = instradamento
 
+    def setEnd(self,end:SimBlockInterface): 
+        """Imposta il blocco di fine."""
+        self.end = end
 
-    def calculateParameters(self):
-        """
-        Per una variabile casuale Lognormale(a, b), la media e la varianza sono:
-
-                          media = exp(a + 0.5*b*b)
-                       varianza = (exp(b*b) - 1) * exp(2*a + b*b)
-
-        Per rendere la distribuzione il più deterministica possibile, 
-        si imposta b molto piccolo (vicino a 0) per minimizzare la varianza.
-        """
-
-        # Per una distribuzione quasi deterministica, impostiamo b molto piccolo
-        b = 1e-4  # Valore molto piccolo per minimizzare la varianza
-        
-        # Con b piccolo, a ≈ ln(media)
-        a = math.log(self.mean) - 0.5 * (b ** 2)
-        
-        return [a, b]
+    
 
 
     def getServiceTime(self,time:datetime)->datetime:
         from desPython import rngs
         rngs.selectStream(self.stream)
-        a,b=self.lognormal_params
-        lognormal = rvgs.Lognormal(a, b)
+        lognormal = generate_denormalized_bounded_pareto(self.a,self.k,0.1,1.0,self.lower_bound,self.upper_bound)
         return time + timedelta(seconds=lognormal)
     
 
 
-
+    def getSuccess(self):
+        from desPython import rngs
+        rngs.selectStream(self.stream)
+        n=rvgs.Uniform(0,1)
+        if n > self.accetpanceRate:
+            return False
+        return True
     
     def get_service_name(self) -> str:
         
@@ -88,7 +91,8 @@ class InvioDiretto(SimBlockInterface):
         if self.working < self.serversNumber:
             self.working += 1
             person=self.queue.pop(0)
-            
+            if person.get_last_state().enqueue_time > exitQueueTime:
+                exitQueueTime = person.get_last_state().enqueue_time
             person.get_last_state().service_start_time = exitQueueTime
             self.queueLenght -= 1
             person.get_last_state().service_end_time = self.getServiceTime(exitQueueTime)
@@ -105,9 +109,13 @@ class InvioDiretto(SimBlockInterface):
         if self.queue:
             event = self.putNextEvent(endTime)
             if event:
-                events.extend(event)    
-        event=self.nextBlock.putInQueue(serving, endTime)
-        
+                events.extend(event)
+
+        compilationSuccess = self.getSuccess()
+        if compilationSuccess:
+            event=self.end.putInQueue(serving, endTime)
+        else:
+            event=self.instradamento.putInQueue(serving, endTime)
         if event:
             events.extend(event)
         return events
