@@ -2,8 +2,8 @@
   "inValutazione": {
     "name": "InValutazione",
     "dipendenti": 200,
-    "pratichePerDipendente": 70,
-    "mean": 90600,
+    "pratichePerDipendente": 30,
+    "mean": 35491.2342457749,
     "variance": 30,
     "successProbability": 0.96
   },

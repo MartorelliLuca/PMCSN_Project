@@ -28,15 +28,17 @@ def main():
 
     if scelta_simulazione == "1":
         daily_rates = engine.getArrivalsRates()
+         # Avvio simulazione
+        print("\n--- Avvio della simulazione ---\n")
+        engine.normale(daily_rates)
     elif scelta_simulazione == "2":
-        daily_rates = engine.getArrivalsRatesToInfinite()
+        # Avvio simulazione
+        print("\n--- Avvio della simulazione ---\n")
+        engine.run_transient_analysis(n_replicas=10, seed_base=1)
+
     else:
         print("Scelta non valida. Uscita.")
         sys.exit(1)
-
-    # Avvio simulazione
-    print("\n--- Avvio della simulazione ---\n")
-    engine.normale(daily_rates)
 
 
 if __name__ == "__main__":

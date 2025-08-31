@@ -34,7 +34,7 @@ class StartBlock(SimBlockInterface):
         self.current_time = start_timestamp                       # tempo corrente nella simulazione
         self.end_timestamp = end_timestamp    # tempo finale della simulazione (30 settembre incluso)
         self.daily_rates = None                            # array di tassi medi giornalieri
-        self.entrate_nel_sistema=[0]*self.get_index_for_date(end_timestamp)  # array per tenere traccia degli arrivi giornalieri
+        self.entrate_nel_sistema = [0] * (self.get_index_for_date(end_timestamp) + 1)  # array per tenere traccia degli arrivi giornalieri
         self.last_date = None                              # per tracciare il cambio di data
 
     def setDailyRates(self, daily_rates: list[float]):

@@ -11,13 +11,23 @@ from simulation.blocks.StartBlock import StartBlock
 class EndBlock(SimBlockInterface):
     """Blocco finale che raccoglie, aggrega e salva risultati giornalieri della simulazione."""
 
-    def __init__(self, output_file="daily_stats.json"):
-        self.output_file = output_file
+    def __init__(self, output_file="daily_stats.json", replica_id: int = None):
+        # Directory per i file di transitorio
+        out_dir = Path(__file__).resolve().parents[2] / "transient_analysis_json"
+        os.makedirs(out_dir, exist_ok=True)
+
+        # Se è una replica, rinomina il file
+        if replica_id is not None:
+            base, ext = output_file.rsplit(".", 1)
+            output_file = f"{base}_rep{replica_id}.{ext}"
+
+        self.output_file = str(out_dir / output_file)
         self.file_handle = open(self.output_file, 'w', encoding='utf-8', buffering=8192)
 
         # Scrive intestazione metadata
         metadata = {
             "type": "metadata",
+            "replica_id": replica_id,
             "start_timestamp": datetime.now().isoformat(),
             "format": "json_lines_per_day"
         }
@@ -25,15 +35,15 @@ class EndBlock(SimBlockInterface):
         self.file_handle.flush()
 
         # Variabili di stato
-        self.workingDate = None               # giorno attualmente in elaborazione
-        self.daily_stats = {}    
-        self.day_summary={
-                    "entrati": 0,
-                    "usciti": 0,
-                    "trovato_coda_piena": 0
-                }           # dizionario con stats per giorno
+        self.workingDate = None
+        self.daily_stats = {}
+        self.day_summary = {
+            "entrati": 0,
+            "usciti": 0,
+            "trovato_coda_piena": 0
+        }
         self.total_processed = 0
-        self.start_block= None  # riferimento al blocco di partenza
+        self.start_block = None
 
     def setStartBlock(self, start_block: StartBlock):
         """Imposta il blocco di partenza per la simulazione.
