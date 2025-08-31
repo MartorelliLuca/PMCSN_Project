@@ -22,19 +22,37 @@ def main():
 
     # Scelta del tipo di simulazione
     print("\nSeleziona il tipo di simulazione:")
-    print("1 - Simulazione Giornaliera")
-    print("2 - Simulazione Transitoria")
-    scelta_simulazione = input("Inserisci scelta (1 o 2): ").strip()
+    print("1 - Simulazione orizzonte finito a tasso variabile Singola Iterazione")
+    print("2 - Simulazione orizzonte finito a tasso costante Singola Iterazione\n")
+    print("3 - Simulazione orizzonte finito a tasso variabile Con Replicazioni")
+    print("4 - Simulazione orizzonte finito a tasso costante Con Replicazioni\n")
+    print("5 - Simulazione Transitoria")
+    scelta_simulazione = input("Inserisci scelta (1, 2 o 3): ").strip()
 
     if scelta_simulazione == "1":
         daily_rates = engine.getArrivalsRates()
          # Avvio simulazione
         print("\n--- Avvio della simulazione ---\n")
-        engine.normale(daily_rates)
+        engine.normale_single_iteration(daily_rates)
     elif scelta_simulazione == "2":
+        daily_rates = engine.getArrivalsEqualsRates()
+         # Avvio simulazione
+        print("\n--- Avvio della simulazione ---\n")
+        engine.normale_single_iteration(daily_rates)
+    elif scelta_simulazione == "3":
+        daily_rates = engine.getArrivalsRates()
+         # Avvio simulazione
+        print("\n--- Avvio della simulazione ---\n")
+        engine.normale_with_constant_replication(daily_rates)
+    elif scelta_simulazione == "4":
+        daily_rates = engine.getArrivalsEqualsRates()
+         # Avvio simulazione
+        print("\n--- Avvio della simulazione ---\n")
+        engine.normale_with_replication(daily_rates)
+    elif scelta_simulazione == "5":
         # Avvio simulazione
         print("\n--- Avvio della simulazione ---\n")
-        engine.run_transient_analysis(n_replicas=10, seed_base=1)
+        engine.run_transient_analysis(n_replicas=10, seed_base=123456789)
 
     else:
         print("Scelta non valida. Uscita.")

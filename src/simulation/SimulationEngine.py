@@ -22,7 +22,7 @@ class SimulationEngine:
     """Gestisce l'esecuzione della simulazione, orchestrando i blocchi di servizio e gli eventi."""
 
     def getArrivalsEqualsRates(self) -> list[float]:
-        """Crea un array costante di arrivi."""
+        """Crea un array costante di arrivi per l’analisi del transitorio."""
         conf_path = Path(__file__).resolve().parents[2] / "conf" / "arrival_rate.json"
         if not conf_path.exists():
             raise FileNotFoundError(f"File non trovato: {conf_path}")
@@ -33,7 +33,7 @@ class SimulationEngine:
         rate = float(data["arrival_rate"])
         return [rate] * 365
 
-    def run_transient_analysis(self, n_replicas: int = 10, seed_base: int = 1):
+    def run_transient_analysis(self, n_replicas: int = 10, seed_base: int = 123456789):
         """
         Metodo delle replicazioni per analisi del transitorio.
         Ogni replica avanza di un anno rispetto alla precedente.
@@ -41,7 +41,7 @@ class SimulationEngine:
 
         for rep in range(n_replicas):
             print(f"\n--- Avvio replica {rep+1}/{n_replicas} ---")
-            rngs.plantSeeds(seed_base + rep)
+            rngs.plantSeeds(seed_base)
 
             # Costruisci i blocchi con replica_id
             self.event_queue = EventQueue()
@@ -75,6 +75,8 @@ class SimulationEngine:
             # Finalizza la replica
             endBlock.finalize()
             print(f"✅ Replica {rep+1} completata! ({start_date.date()} → {end_date.date()})")
+            
+            seed_base = rngs.getSeed()
 
 
 
@@ -163,7 +165,7 @@ class SimulationEngine:
 
         return startingBlock, instradamento, autenticazione, compilazionePrecompilata, invioDiretto, inValutazione, endBlock
 
-    def normale(self, daily_rates: list[float] = None):
+    def normale_single_iteration(self, daily_rates: list[float] = None):
         """Avvia la simulazione con i tassi di arrivo specificati."""
         rngs.plantSeeds(1)
         self.event_queue = EventQueue()
@@ -188,5 +190,72 @@ class SimulationEngine:
 
         endBlock.finalize()
 
+    def normale_with_constant_replication(self, daily_rates: list[float] = None):
+        """Avvia la simulazione con i tassi di arrivo specificati."""
+        rngs.plantSeeds(1)
+        self.event_queue = EventQueue()
 
-        
+        startingBlock, instradamento, autenticazione, compilazionePrecompilata, invioDiretto, inValutazione, endBlock = self.buildBlocks()
+
+        if daily_rates is None:
+            daily_rates = self.getArrivalsRates()
+
+        startingBlock.setDailyRates(daily_rates)
+        startingBlock.setNextBlock(instradamento)
+        self.event_queue.push(startingBlock.start())
+
+        while not self.event_queue.is_empty():
+            event = self.event_queue.pop()
+            event = event[0] if isinstance(event, list) else event
+            if event.handler:
+                new_events = event.handler(event.person)
+                if new_events:
+                    for new_event in new_events:
+                        self.event_queue.push(new_event)
+
+        endBlock.finalize()
+
+    def normale_with_replication(self, n_replicas: int = 10, seed_base: int = 123456789):
+        """
+        Metodo delle replicazioni anche per la simulazione "normale".
+        Ogni replica avanza di un anno rispetto alla precedente.
+        """
+        for rep in range(n_replicas):
+            print(f"\n--- Avvio replica {rep+1}/{n_replicas} ---")
+            rngs.plantSeeds(seed_base)
+
+            # Costruisci i blocchi con replica_id
+            self.event_queue = EventQueue()
+            startingBlock, instradamento, autenticazione, compilazionePrecompilata, invioDiretto, inValutazione, endBlock = self.buildBlocks(replica_id=rep)
+            endBlock.setStartBlock(startingBlock)
+
+            daily_rates = self.getArrivalsRates()
+
+            startingBlock.setDailyRates(daily_rates)
+
+            # Sposta l’intervallo temporale di 1 anno per ogni replica
+            shift_years = rep
+            start_date = startingBlock.start_timestamp.replace(year=startingBlock.start_timestamp.year + shift_years)
+            end_date   = startingBlock.end_timestamp.replace(year=startingBlock.end_timestamp.year + shift_years)
+
+            startingBlock.start_timestamp = start_date
+            startingBlock.current_time    = start_date
+            startingBlock.end_timestamp   = end_date
+
+            # Avvio simulazione
+            self.event_queue.push(startingBlock.start())
+            while not self.event_queue.is_empty():
+                event = self.event_queue.pop()
+                event = event[0] if isinstance(event, list) else event
+                if event.handler:
+                    new_events = event.handler(event.person)
+                    if new_events:
+                        for new_event in new_events:
+                            self.event_queue.push(new_event)
+
+            # Finalizza la replica
+            endBlock.finalize()
+            print(f"✅ Replica {rep+1} completata! ({start_date.date()} → {end_date.date()})")
+
+            # Aggiorna il seed per la prossima replica
+            seed_base = rngs.getSeed()
