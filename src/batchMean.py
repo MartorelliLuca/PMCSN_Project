@@ -19,14 +19,16 @@ def read_stats(file_path, n):
             day = json.loads(line)
             stats = day.get("stats", {})
             for service_name, service_stats in stats.items():
-                if service_name not in service_data:
-                    service_data[service_name] = []
-                # Extend the service's queue_time list
-                if len(service_data[service_name]) >= n:
-                    continue
-                service_data[service_name].extend(service_stats['data']['queue_time'])
-                if len(service_data[service_name]) > n:
-                    service_data[service_name] = service_data[service_name][:n]
+                # For each metric (queue_time, executing_time)
+                for metric in ['queue_time', 'executing_time']:
+                    key = f"{service_name}:{metric}"
+                    if key not in service_data:
+                        service_data[key] = []
+                    if len(service_data[key]) >= n:
+                        continue
+                    service_data[key].extend(service_stats['data'][metric])
+                    if len(service_data[key]) > n:
+                        service_data[key] = service_data[key][:n]
     return service_data
 
 
