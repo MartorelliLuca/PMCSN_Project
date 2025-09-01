@@ -32,8 +32,12 @@ class SimulationEngine:
 
         rate = float(data["arrival_rate"])
         return [rate] * 365
+    
 
-    def run_transient_analysis(self, n_replicas: int = 10, seed_base: int = 123456789):
+    def getAccumulationArrivals(self) -> list[float]:
+        return [0.159+0.2] * 365
+
+    def run_transient_analysis(self, n_replicas: int = 2, seed_base: int = 123456789):
         """
         Metodo delle replicazioni per analisi del transitorio.
         Ogni replica avanza di un anno rispetto alla precedente.
@@ -50,13 +54,16 @@ class SimulationEngine:
 
             # Imposta i daily_rates costanti da arrival_rate.json
             daily_rates = self.getArrivalsEqualsRates()
-            startingBlock.setDailyRates(daily_rates)
+            accumulationARrivals = self.getAccumulationArrivals()
+            startingBlock.setDailyRates(accumulationARrivals)
 
             # Sposta l'intervallo temporale di 1 anno per ogni replica
             shift_years = rep
             start_date = startingBlock.start_timestamp.replace(year=startingBlock.start_timestamp.year + shift_years)
             end_date = startingBlock.end_timestamp.replace(year=startingBlock.end_timestamp.year + shift_years)
-
+            endBlock.setWorkingStatus(True)
+            accumulating = True
+            finishAccumulationDate = start_date + timedelta(days=1)
             startingBlock.start_timestamp = start_date
             startingBlock.current_time = start_date
             startingBlock.end_timestamp = end_date
@@ -67,6 +74,14 @@ class SimulationEngine:
                 event = self.event_queue.pop()
                 event = event[0] if isinstance(event, list) else event
                 if event.handler:
+
+                    eventdate=event.timestamp.date()
+                    if eventdate > finishAccumulationDate.date() and accumulating:
+                        print(f"--- Fine accumulo, inizio raccolta dati il {eventdate} ---")
+                        endBlock.setWorkingStatus(True)
+                        accumulating = False    
+                        startingBlock.setDailyRates(daily_rates)
+
                     new_events = event.handler(event.person)
                     if new_events:
                         for new_event in new_events:

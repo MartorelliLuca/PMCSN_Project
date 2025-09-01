@@ -46,6 +46,11 @@ class EndBlock(SimBlockInterface):
         }
         self.total_processed = 0
         self.start_block = None
+        self.working=True
+
+
+    def setWorkingStatus(self, status: bool):
+        self.working = status
 
     def setStartBlock(self, start_block: StartBlock):
         """Imposta il blocco di partenza per la simulazione.
@@ -144,6 +149,9 @@ class EndBlock(SimBlockInterface):
         Returns:
             list[Event]: Lista vuota (blocco finale).
         """
+
+        if self.working is False:
+            return []
         completion_date = timestamp.date()
 
         # Cambiamento giorno? Flush precedente e reset stats
