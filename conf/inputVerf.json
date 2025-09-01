@@ -1,0 +1,39 @@
+{
+    "inValutazione": {
+      "name": "InValutazione",
+      "serversNumber": 10,
+      "mean": 45.045,
+      "variance": 0.0,
+      "successProbability": 0.96
+    },
+    "compilazionePrecompilata": {
+      "name": "CompilazionePrecompilata",
+      "serversNumber": 8,
+      "mean": 30.0,
+      "variance": 0.6931471806,
+      "successProbability": 0.85
+    },
+    "invioDiretto": {
+      "name": "InvioDiretto",
+      "mean": 3.0,
+      "variance": 0.0
+    },
+    "instradamento": {
+      "name": "Instradamento",
+      "serviceRate": 3.0,
+      "serversNumber": 3,
+      "queueMaxLenght": 2000
+    },
+    "autenticazione": {
+      "name": "Autenticazione",
+      "serviceRate": 2.252,
+      "serversNumber": 4,
+      "successProbability": 0.75,
+      "compilazionePrecompilataProbability": 0.8
+    },
+    "date": {
+      "start": "2025-05-01",
+      "end": "2025-09-30"
+    }
+  }
+  

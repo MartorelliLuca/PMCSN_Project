@@ -244,6 +244,30 @@ def create_comprehensive_analysis(filename, output_dir):
         plt.close()
     return queue_data, daily_summaries, output_dir
 
+def print_queue_summary(queue_data, daily_summaries):
+    """Stampa a schermo un riepilogo delle metriche principali per ogni coda"""
+    giorni = len(daily_summaries)
+    entrati_totali = sum(d['entrati'] for d in daily_summaries)
+    lambda_globale = entrati_totali / giorni if giorni > 0 else 0
+
+    print("\n=== RIEPILOGO METRICHE PER CODA ===")
+    for queue_name, data in queue_data.items():
+        exec_times = data['execution_times']
+        queue_times = data['queue_times']
+
+        tempo_servizio_medio = np.mean(exec_times) if exec_times else 0
+        tempo_coda_medio = np.mean(queue_times) if queue_times else 0
+        tempo_risposta_medio = tempo_coda_medio + tempo_servizio_medio
+
+        visite_totali = sum(v['visited'] for v in data['visits'])
+        lambda_coda = visite_totali / giorni if giorni > 0 else 0
+
+        print(f"\nCoda: {queue_name}")
+       #print(f"  λ (arrivi medi/giorno): {lambda_coda:.2f}")
+        print(f"  Tempo di servizio medio E(S_i): {tempo_servizio_medio:.2f} s")
+        print(f"  Tempo in coda medio E(T_Q): {tempo_coda_medio:.2f} s")
+        print(f"  Tempo di risposta medio E(T_S): {tempo_risposta_medio:.2f} s")
+
 
 def analyze_transient_analysis_directory(transient_dir="transient_analysis_json", output_dir="graphs/transient_avg"):
     """
@@ -367,6 +391,9 @@ if __name__ == "__main__":
     try:
         queue_data, daily_summaries, output_dir = create_comprehensive_analysis(stats_file, output_dir)
         
+        # stampa riassunto code
+        print_queue_summary(queue_data, daily_summaries)
+
         if os.path.exists(config_file):
             shutil.copy(config_file, os.path.join(output_dir, "input.json"))
             print(f"File input.json copiato in {output_dir}/")

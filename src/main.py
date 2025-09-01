@@ -1,6 +1,8 @@
 import sys
 from simulation.SimulationEngine import SimulationEngine as BaseEngine
 from simulation.SimulationEngineMigliorativa import SimulationEngine as MigliorativoEngine
+from simulation.verification.blocks.SimulationEngine import SimulationEngine as ExponentialEngine 
+
 
 
 def main():
@@ -10,7 +12,8 @@ def main():
     print("Seleziona il modello:")
     print("1 - Modello Base")
     print("2 - Modello Migliorativo")
-    scelta_modello = input("Inserisci scelta (1 o 2): ").strip()
+    
+    scelta_modello = input("Inserisci scelta: ").strip()
 
     if scelta_modello == "1":
         engine = BaseEngine()
@@ -23,11 +26,12 @@ def main():
     # Scelta del tipo di simulazione
     print("\nSeleziona il tipo di simulazione:")
     print("1 - Simulazione orizzonte finito a tasso variabile Singola Iterazione")
-    print("2 - Simulazione orizzonte finito a tasso costante Singola Iterazione\n")
-    print("3 - Simulazione orizzonte finito a tasso variabile Con Replicazioni")
+    print("2 - Simulazione orizzonte finito a tasso costante Singola Iterazione")
+    print("3 - Verifica Modello Base\n")
+    print("4 - Simulazione orizzonte finito a tasso variabile Con Replicazioni")
     print("4 - Simulazione orizzonte finito a tasso costante Con Replicazioni\n")
     print("5 - Simulazione Transitoria")
-    scelta_simulazione = input("Inserisci scelta (1, 2 o 3): ").strip()
+    scelta_simulazione = input("Inserisci scelta: ").strip()
 
     if scelta_simulazione == "1":
         daily_rates = engine.getArrivalsRates()
@@ -35,11 +39,17 @@ def main():
         print("\n--- Avvio della simulazione ---\n")
         engine.normale_single_iteration(daily_rates)
     elif scelta_simulazione == "2":
-        daily_rates = engine.getArrivalsEqualsRates()
+        daily_rates = engine.getArrivalsRatesToInfinite()
          # Avvio simulazione
         print("\n--- Avvio della simulazione ---\n")
-        engine.normale_single_iteration(daily_rates)
+        engine.normale(daily_rates)
     elif scelta_simulazione == "3":
+        engine = ExponentialEngine() 
+        daily_rates = engine.getArrivalsRatesToInfinite()
+         # Avvio simulazione
+        print("\n--- Avvio della simulazione ---\n")
+        engine.normale(daily_rates)
+    elif scelta_simulazione == "4":
         daily_rates = engine.getArrivalsRates()
          # Avvio simulazione
         print("\n--- Avvio della simulazione ---\n")
