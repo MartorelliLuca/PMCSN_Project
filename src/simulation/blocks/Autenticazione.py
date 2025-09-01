@@ -57,7 +57,7 @@ class Autenticazione(SimBlockInterface):
         return False
     def get_login_sucess(self):
         from desPython import rngs
-        rngs.selectStream(self.stream)
+        rngs.selectStream(self.stream+100)
         n=rvgs.Uniform(0,1)
         if n > self.successProbability:
             return False

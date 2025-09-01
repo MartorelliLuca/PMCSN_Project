@@ -20,6 +20,7 @@ class InValutazione(SimBlockInterface):
         self.mean = mean
         self.variance = variance
         self.serversNumber = dipendenti*pratichePerDipendente
+        self.normalServerNumber=self.serversNumber
         self.accetpanceRate = successProbability
         self.queueLenght = 0
         self.queue=[]
@@ -58,7 +59,7 @@ class InValutazione(SimBlockInterface):
 
     def getSuccess(self):
         from desPython import rngs
-        rngs.selectStream(self.stream)
+        rngs.selectStream(self.stream+100)
         n=rvgs.Uniform(0,1)
         if n > self.accetpanceRate:
             return False
@@ -76,6 +77,7 @@ class InValutazione(SimBlockInterface):
 
 
     def putInQueue(self,person: Person,timestamp: datetime) ->list[Event]:
+      
         state=NormalState(self.name, timestamp, self.queueLenght)
         self.queueLenght += 1
         self.queue.append(person)
