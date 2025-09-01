@@ -12,6 +12,11 @@ from simulation.verification.blocks.InValutazioneExp import InValutazioneExponen
 from simulation.blocks.Autenticazione import Autenticazione
 from simulation.blocks.Instradamento import Instradamento
 
+import json
+from math import sqrt
+from desPython import rvms
+from batchMean import read_stats, computeMeanAndStdev, autocorrelation_stats, getStudent
+
 from pathlib import Path
 import json
 
@@ -133,3 +138,65 @@ class SimulationEngine:
                         self.event_queue.push(new_event)
 
         endBlock.finalize()
+
+    def run_and_analyze(self, daily_rates=None, n=64*100, batch_count=64, theo_json="theo_values.json"):
+        """
+        Esegue la simulazione e calcola batch means, stdev e intervallo di confidenza.
+        Verifica anche la coerenza con i valori teorici specificati in un file JSON.
+        """
+        # Esegui la simulazione
+        self.normale(daily_rates)
+
+        # Leggi i dati salvati
+        stats = read_stats('daily_stats.json', n)
+
+        # Carica valori teorici
+        theo_path = self._get_conf_path(theo_json)
+        with theo_path.open("r", encoding="utf-8") as f:
+            theo_values = json.load(f)
+
+        print(f"[DEBUG] Ho letto {len(stats)} servizi da daily_stats.json: {list(stats.keys())}")
+    
+
+        # Calcolo batch means e stdev
+        batchesMean = {}
+        batchesStdev = {}
+        for service, data in stats.items():
+            mean, std = computeMeanAndStdev(data, batch_count)
+            batchesMean[service] = mean
+            batchesStdev[service] = std
+
+        # Autocorrelazione e verifica vs valori teorici
+        results = {}
+        for service, batch_means in batchesMean.items():
+            mean_sim, stddev = autocorrelation_stats(20, batch_means)
+            student = getStudent(batch_count)
+            ci = student * stddev / sqrt(len(batch_means))
+
+            # Prendi i valori teorici
+            queue_theoretical = theo_values[service].get("queue_time")
+            service_theoretical = theo_values[service].get("service_time")
+            response_theoretical = theo_values[service].get("response_time")
+
+            # Verifica coerenza
+            check_queue = queue_theoretical is None or (mean_sim - ci <= queue_theoretical <= mean_sim + ci)
+            check_service = service_theoretical is None or (mean_sim - ci <= service_theoretical <= mean_sim + ci)
+            check_response = response_theoretical is None or (mean_sim - ci <= response_theoretical <= mean_sim + ci)
+
+            results[service] = {
+                "mean_sim": mean_sim,
+                "ci_95": (mean_sim - ci, mean_sim + ci),
+                "queue_check": check_queue,
+                "service_check": check_service,
+                "response_check": check_response
+            }
+
+            # Stampa risultati
+            print(f"\nServizio: {service}")
+            print(f"Media simulata = {mean_sim:.2f}, 95% CI = [{mean_sim - ci:.2f}, {mean_sim + ci:.2f}]")
+            print(f"Queue time teorico = {queue_theoretical}, coerente? {check_queue}")
+            print(f"Service time teorico = {service_theoretical}, coerente? {check_service}")
+            print(f"Response time teorico = {response_theoretical}, coerente? {check_response}")
+
+        return results
+

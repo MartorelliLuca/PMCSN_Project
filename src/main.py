@@ -47,8 +47,14 @@ def main():
         engine = ExponentialEngine() 
         daily_rates = engine.getArrivalsRatesToInfinite()
          # Avvio simulazione
-        print("\n--- Avvio della simulazione ---\n")
-        engine.normale(daily_rates)
+        print("\n--- Avvio della simulazione e analisi batch ---\n")
+        results = engine.run_and_analyze(
+        daily_rates=daily_rates,
+        n=64*100,
+        batch_count=64,
+        theo_json="theo_values.json"
+    )
+        #engine.normale(daily_rates)
     elif scelta_simulazione == "4":
         daily_rates = engine.getArrivalsRates()
          # Avvio simulazione

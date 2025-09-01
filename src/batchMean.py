@@ -3,11 +3,6 @@ import json
 from desPython import rvms
 
 
-
-
-
-
-
 def read_stats(file_path, n):
     """
     For each service, create a list of arrays, each with n queue_time values,
@@ -27,23 +22,18 @@ def read_stats(file_path, n):
                 if service_name not in service_data:
                     service_data[service_name] = []
                 # Extend the service's queue_time list
-                if  len(service_data[service_name]) >= n :
+                if len(service_data[service_name]) >= n:
                     continue
                 service_data[service_name].extend(service_stats['data']['queue_time'])
                 if len(service_data[service_name]) > n:
                     service_data[service_name] = service_data[service_name][:n]
-            
-
-
-    
     return service_data
-
 
 
 def autocorrelation_stats(k, data):
     """
     Computes mean, stdev, and autocorrelation coefficients up to lag k for a list of floats.
-    Prints the results.
+    Returns mean and stdev.
     """
     SIZE = k + 1
     n = len(data)
@@ -78,20 +68,13 @@ def autocorrelation_stats(k, data):
     for j in range(SIZE):
         cosum[j] = (cosum[j] / (n - j)) - (mean * mean)
 
-    print(f"for {n} data points")
-    print(f"the mean is ... {mean:8.2f}")
-    print(f"the stdev is .. {sqrt(cosum[0]):8.2f}\n")
-    print("  j (lag)   r[j] (autocorrelation)\n")
     if cosum[0] == 0:
-        print("All data points are zero; autocorrelation is undefined.")
-        return  mean,sqrt(cosum[0])
-    for j in range(1, 2):
-        print(f"{j:3d}  {cosum[j] / cosum[0]:11.3f}")
-    return mean,sqrt(cosum[0])
+        return mean, sqrt(cosum[0])
+
+    return mean, sqrt(cosum[0])
 
 
-
-def computeMeanAndStdev(data,k):
+def computeMeanAndStdev(data, k):
     """
     Splits data into k batches, computes mean and stddev for each batch.
     Returns two lists: means, stddevs (length k)
@@ -100,38 +83,41 @@ def computeMeanAndStdev(data,k):
     means = []
     stddevs = []
     for i in range(k):
-        batch = data[i*batch_size:(i+1)*batch_size]
+        batch = data[i * batch_size:(i + 1) * batch_size]
         if not batch:
             continue
         m = sum(batch) / len(batch)
-        s = sqrt(sum((x-m)**2 for x in batch) / len(batch))
+        s = sqrt(sum((x - m) ** 2 for x in batch) / len(batch))
         means.append(m)
         stddevs.append(s)
     return means, stddevs
-  
+
 
 def getStudent(k):
-    alpha=0.05
-    val=rvms.idfStudent(k-1,1-alpha/2)
+    alpha = 0.05
+    val = rvms.idfStudent(k - 1, 1 - alpha / 2)
     return val
-n=64*100#143*50
 
 
-#read n elements from simulation (in endBlock change number of saved samples for more data)
-stats=read_stats('daily_stats.json', n)
-batchesMean={}
-batchesStdev={}
+# =============================
+# Test manuale (solo se eseguito direttamente)
+# =============================
+if __name__ == "__main__":
+    n = 64 * 100  # oppure 143*50
 
-#calulate batch means and stdevs
-for service, data in stats.items():
-    mean,std=computeMeanAndStdev(data,64)
-    batchesMean[service]=mean
-    batchesStdev[service]=std
+    stats = read_stats('daily_stats.json', n)
+    batchesMean = {}
+    batchesStdev = {}
 
+    # calculate batch means and stdevs
+    for service, data in stats.items():
+        mean, std = computeMeanAndStdev(data, 64)
+        batchesMean[service] = mean
+        batchesStdev[service] = std
 
-#calculate autocorrelation on batch means and confidence interval
-for service, data in batchesMean.items():
-    print(f"\nService: {service}")
-    mean,stddev=autocorrelation_stats(20, data)
-    student=getStudent(64)
-    print(f"95% confidence interval for the mean: {mean}+-{  student * (stddev )/sqrt(len(data)):.2f}")
+    # calculate autocorrelation on batch means and confidence interval
+    for service, data in batchesMean.items():
+        print(f"\nService: {service}")
+        mean, stddev = autocorrelation_stats(20, data)
+        student = getStudent(64)
+        print(f"95% confidence interval for the mean: {mean}+-{student * (stddev) / sqrt(len(data)):.2f}")

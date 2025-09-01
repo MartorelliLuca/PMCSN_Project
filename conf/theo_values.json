@@ -1,0 +1,27 @@
+{
+    "Instradamento": {
+        "queue_time": 0.0,
+        "service_time": 0.11,
+        "response_time": 0.33
+    },
+    "Autenticazione": {
+        "queue_time": 0.0,
+        "service_time": 0.11,
+        "response_time": 0.44
+    },
+    "CompilazionePrecompilata": {
+        "queue_time": 0.3496,
+        "service_time": 3,
+        "response_time": 30.3496
+    },
+    "InvioDiretto": {
+        "queue_time": 0.442,
+        "service_time": 3,
+        "response_time": 3.442
+    },
+    "InValutazione": {
+        "queue_time": 30.1224,
+        "service_time": 4.5045,
+        "response_time": 75.1674
+    }
+}
