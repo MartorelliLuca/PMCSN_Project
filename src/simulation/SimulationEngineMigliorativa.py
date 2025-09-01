@@ -20,7 +20,7 @@ import json
 class SimulationEngine:
     """Versione migliorativa con coda prioritaria NP."""
 
-    def getArrivalsRatesTransientAnalysis(self) -> list[float]:
+    def getArrivalsRatesToInfinite(self) -> list[float]:
         conf_path = Path(__file__).resolve().parents[2] / "conf" / "arrival_rate.json"
         if not conf_path.exists():
             raise FileNotFoundError(f"File non trovato: {conf_path}")
