@@ -91,16 +91,47 @@ def autocorrelation_stats(k, data):
 
 
 
+def computeMeanAndStdev(data,k):
+    """
+    Splits data into k batches, computes mean and stddev for each batch.
+    Returns two lists: means, stddevs (length k)
+    """
+    batch_size = len(data) // k
+    means = []
+    stddevs = []
+    for i in range(k):
+        batch = data[i*batch_size:(i+1)*batch_size]
+        if not batch:
+            continue
+        m = sum(batch) / len(batch)
+        s = sqrt(sum((x-m)**2 for x in batch) / len(batch))
+        means.append(m)
+        stddevs.append(s)
+    return means, stddevs
+  
+
 def getStudent(k):
     alpha=0.05
     val=rvms.idfStudent(k-1,1-alpha/2)
     return val
+n=64*100#143*50
 
-stats=read_stats('daily_stats.json', 5000)
-print(f"Found {len(stats)} services with data.")
-#print(stats)
+
+#read n elements from simulation (in endBlock change number of saved samples for more data)
+stats=read_stats('daily_stats.json', n)
+batchesMean={}
+batchesStdev={}
+
+#calulate batch means and stdevs
 for service, data in stats.items():
+    mean,std=computeMeanAndStdev(data,64)
+    batchesMean[service]=mean
+    batchesStdev[service]=std
+
+
+#calculate autocorrelation on batch means and confidence interval
+for service, data in batchesMean.items():
     print(f"\nService: {service}")
-    mean,stddev=autocorrelation_stats(64, data)
+    mean,stddev=autocorrelation_stats(20, data)
     student=getStudent(64)
     print(f"95% confidence interval for the mean: {mean}+-{  student * (stddev )/sqrt(len(data)):.2f}")
