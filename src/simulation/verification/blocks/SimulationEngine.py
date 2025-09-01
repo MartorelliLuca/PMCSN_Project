@@ -148,7 +148,7 @@ class SimulationEngine:
         self.normale(daily_rates)
 
         # Leggi i dati salvati
-        stats = read_stats('daily_stats.json', n)
+        stats = read_stats('transient_analysis_json/daily_stats.json', n)
 
         # Carica valori teorici
         theo_path = self._get_conf_path(theo_json)

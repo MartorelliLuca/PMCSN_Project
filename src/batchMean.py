@@ -107,7 +107,7 @@ def getStudent(k):
 if __name__ == "__main__":
     n = 64 * 100  # oppure 143*50
 
-    stats = read_stats('daily_stats.json', n)
+    stats = read_stats('transient_analysis_json/daily_stats.json', n)
     batchesMean = {}
     batchesStdev = {}
 
