@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 
 from simulation.blocks.EndBlock import EndBlock
 from simulation.blocks.StartBlock import StartBlock
-from simulation.blocks.InvioDiretto import InvioDiretto
+from simulation.verification.blocks.InvioDirettoExp import InvioDiretto
 from simulation.verification.blocks.CompilazionePrecompilataExp import CompilazionePrecompilataExponential
 from simulation.verification.blocks.InValutazioneExp import InValutazioneExponential
 from simulation.blocks.Autenticazione import Autenticazione
@@ -149,7 +149,8 @@ class SimulationEngine:
 
     # Leggi i dati salvati
         stats = read_stats('transient_analysis_json/daily_stats.json', n)
-
+        n=len(stats["Autenticazione:queue_time"])
+        batch_count=32
     # Carica valori teorici
         theo_path = self._get_conf_path(theo_json)
         with theo_path.open("r", encoding="utf-8") as f:

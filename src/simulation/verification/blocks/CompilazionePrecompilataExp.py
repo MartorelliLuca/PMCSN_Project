@@ -76,10 +76,14 @@ class CompilazionePrecompilataExponential(SimBlockInterface):
             new_events = self.putNextEvent(endTime)
             if new_events:
                 events.extend(new_events)
-
-        if self.nextBlock:
+        succes=self.getSuccess()
+        if succes:
+         if self.nextBlock:
             next_events = self.nextBlock.putInQueue(person, endTime)
             if next_events:
                 events.extend(next_events)
-
+        else:
+            next_events=self.putInQueue(person,endTime)
+            if next_events:
+                events.extend(next_events)
         return events
