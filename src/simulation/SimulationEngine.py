@@ -55,7 +55,7 @@ class SimulationEngine:
 
         for rep in range(n_replicas):
             print(f"\n--- Avvio replica {rep+1}/{n_replicas} ---")
-            rngs.plantSeeds(seed_base)
+            rngs.plantSeeds(1)
 
             # Costruisci i blocchi con replica_id
             self.event_queue = EventQueue()
@@ -88,6 +88,7 @@ class SimulationEngine:
                     eventdate=event.timestamp
                     if eventdate > finishAccumulationDate and accumulating:
                         print(f"--- Fine accumulo, inizio raccolta dati il {eventdate} ---")
+                        rngs.plantSeeds(seed_base)
                         endBlock.setWorkingStatus(True)
                         accumulating = False    
                         startingBlock.setDailyRates(daily_rates)

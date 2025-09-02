@@ -39,6 +39,14 @@ def extract_queue_data(data):
 
     return queue_data
 
+def apply_log_scale(ax, values, queue_name):
+    """Applica scala logaritmica se i valori sono grandi o se è InValutazione"""
+    if not values:
+        return
+    vmax = max(values)
+    if queue_name == "InValutazione":
+        ax.set_ylim(0, 300000)
+
 def plot_aggregated_averages(queue_name, data, output_dir):
     fig, ax = plt.subplots(figsize=(10, 6))
     ax.set_title(f"{queue_name} - Media Mobile Tempi di Attesa (tutte le repliche)")
@@ -49,6 +57,7 @@ def plot_aggregated_averages(queue_name, data, output_dir):
             continue
         moving_avg = pd.Series(q_times).rolling(window=max(10, len(q_times)//50)).mean()
         ax.plot(moving_avg, label=label)
+    apply_log_scale(ax, [v for arr in data.values() for v in arr], queue_name)
     ax.grid(True, alpha=0.3)
     ax.legend()
     plt.tight_layout()
@@ -62,8 +71,11 @@ def plot_comparison_chart(queue_name, replica_data, output_dir):
     ax.set_ylabel("Tempo Medio di Attesa (s)")
     means = [(rep, np.mean(times)) for rep, times in replica_data.items() if times]
     means.sort()
+    if not means:
+        return
     labels, values = zip(*means)
     ax.bar(labels, values, color='skyblue')
+    apply_log_scale(ax, values, queue_name)
     ax.grid(True, alpha=0.3)
     plt.xticks(rotation=45)
     plt.tight_layout()
@@ -75,11 +87,14 @@ def plot_response_time_averages(queue_name, data, output_dir):
     ax.set_title(f"{queue_name} - Media Mobile Tempi di Risposta (tutte le repliche)")
     ax.set_xlabel("Evento #")
     ax.set_ylabel("Tempo di Risposta (s)")
+    all_vals = []
     for label, r_times in data.items():
         if len(r_times) < 10:
             continue
         moving_avg = pd.Series(r_times).rolling(window=max(10, len(r_times)//50)).mean()
         ax.plot(moving_avg, label=label)
+        all_vals.extend(r_times)
+    apply_log_scale(ax, all_vals, queue_name)
     ax.grid(True, alpha=0.3)
     ax.legend()
     plt.tight_layout()
@@ -91,12 +106,15 @@ def plot_response_times(queue_name, data, output_dir):
     ax.set_title(f"{queue_name} - Tempo di Risposta (Attesa + 66000s)")
     ax.set_xlabel("Evento #")
     ax.set_ylabel("Tempo di Risposta (s)")
+    all_vals = []
     for label, q_times in data.items():
         if len(q_times) < 10:
             continue
         response_times = [qt + 66000 for qt in q_times]
         moving_avg = pd.Series(response_times).rolling(window=max(10, len(response_times)//50)).mean()
         ax.plot(moving_avg, label=label)
+        all_vals.extend(response_times)
+    apply_log_scale(ax, all_vals, queue_name)
     ax.grid(True, alpha=0.3)
     ax.legend()
     plt.tight_layout()
