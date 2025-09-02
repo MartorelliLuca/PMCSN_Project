@@ -14,11 +14,11 @@ from simulation.blocks.Instradamento import Instradamento
 
 import json
 from math import sqrt
-from desPython import rvms
-from batchMean import read_stats, computeMeanAndStdev, autocorrelation_stats, getStudent
-
 from pathlib import Path
-import json
+from tabulate import tabulate
+from math import sqrt
+
+from batchMean import read_stats, computeBatchMeans, computeBatchStdev, getStudent
 
 
 class SimulationEngine:
@@ -139,64 +139,63 @@ class SimulationEngine:
 
         endBlock.finalize()
 
-    def run_and_analyze(self, daily_rates=None, n=64*100, batch_count=64, theo_json="theo_values.json"):
+    def run_and_analyze(self, daily_rates=None, n=64*200, batch_count=128, theo_json="theo_values.json"):
         """
-        Esegue la simulazione e calcola batch means, stdev e intervallo di confidenza.
-        Verifica anche la coerenza con i valori teorici specificati in un file JSON.
+        Esegue la simulazione, calcola batch means, stdev e intervallo di confidenza.
+        Confronta i valori simulati con quelli teorici e stampa una tabella completa.
         """
-        # Esegui la simulazione
+    # Esegui la simulazione
         self.normale(daily_rates)
 
-        # Leggi i dati salvati
+    # Leggi i dati salvati
         stats = read_stats('transient_analysis_json/daily_stats.json', n)
 
-        # Carica valori teorici
+    # Carica valori teorici
         theo_path = self._get_conf_path(theo_json)
         with theo_path.open("r", encoding="utf-8") as f:
             theo_values = json.load(f)
 
-        print(f"[DEBUG] Ho letto {len(stats)} servizi da daily_stats.json: {list(stats.keys())}")
-    
+        rows = []
 
-        # Calcolo batch means e stdev
-        batchesMean = {}
-        batchesStdev = {}
-        for service, data in stats.items():
-            mean, std = computeMeanAndStdev(data, batch_count)
-            batchesMean[service] = mean
-            batchesStdev[service] = std
+    # Per ogni servizio e metrica presenti nei valori teorici
+        for service, metrics in theo_values.items():
+            for metric, theo_val in metrics.items():
+                key = f"{service}:{metric}"
 
-        # Autocorrelazione e verifica vs valori teorici
-        results = {}
-        for service, batch_means in batchesMean.items():
-            mean_sim, stddev = autocorrelation_stats(20, batch_means)
-            student = getStudent(batch_count)
-            ci = student * stddev / sqrt(len(batch_means))
+                if key in stats:
+                    values = stats[key]
 
-            # Prendi i valori teorici
-            queue_theoretical = theo_values[service].get("queue_time")
-            service_theoretical = theo_values[service].get("service_time")
-            response_theoretical = theo_values[service].get("response_time")
+                # Calcolo batch means
+                    batch_means = computeBatchMeans(values, batch_count)
+                    k_eff = len(batch_means)
+                    if k_eff < 2:
+                        mean_sim = None
+                        ci = (None, None)
+                    else:
+                        mean_sim = sum(batch_means)/k_eff
+                        var_sim = sum((x - mean_sim)**2 for x in batch_means)/(k_eff - 1)
+                        se = sqrt(var_sim/k_eff)
+                        tcrit = getStudent(k_eff)
+                        ci = (mean_sim - tcrit*se, mean_sim + tcrit*se)
+                else:
+                    mean_sim = None
+                    ci = (None, None)
 
-            # Verifica coerenza
-            check_queue = queue_theoretical is None or (mean_sim - ci <= queue_theoretical <= mean_sim + ci)
-            check_service = service_theoretical is None or (mean_sim - ci <= service_theoretical <= mean_sim + ci)
-            check_response = response_theoretical is None or (mean_sim - ci <= response_theoretical <= mean_sim + ci)
+            # Check coerenza
+                check = (
+                    mean_sim is not None and ci[0] <= theo_val <= ci[1]
+                )
 
-            results[service] = {
-                "mean_sim": mean_sim,
-                "ci_95": (mean_sim - ci, mean_sim + ci),
-                "queue_check": check_queue,
-                "service_check": check_service,
-                "response_check": check_response
-            }
+                rows.append([
+                    service,
+                    metric,
+                    f"{theo_val:.4f}" if theo_val is not None else "-",
+                    f"{mean_sim:.4f}" if mean_sim is not None else "-",
+                    f"[{ci[0]:.4f}, {ci[1]:.4f}]" if mean_sim is not None else "-",
+                    "✅" if check else "❌"
+                ])
 
-            # Stampa risultati
-            print(f"\nServizio: {service}")
-            print(f"Media simulata = {mean_sim:.2f}, 95% CI = [{mean_sim - ci:.2f}, {mean_sim + ci:.2f}]")
-            print(f"Queue time teorico = {queue_theoretical}, coerente? {check_queue}")
-            print(f"Service time teorico = {service_theoretical}, coerente? {check_service}")
-            print(f"Response time teorico = {response_theoretical}, coerente? {check_response}")
+        print("\n=== Confronto simulazione vs valori teorici ===")
+        print(tabulate(rows, headers=["Servizio", "Metrica", "Teorico", "Simulato", "95% CI", "Coerente?"]))
 
-        return results
-
+        return rows

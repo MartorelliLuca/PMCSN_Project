@@ -2,12 +2,12 @@ from math import sqrt
 import json
 from desPython import rvms
 
-
 def read_stats(file_path, n):
     """
-    For each service, create a list of arrays, each with n queue_time values,
-    reading across days and starting a new batch only when n is reached.
-    Returns: dict {service_name: [ [queue_time, ...], ... ] }
+    Legge i dati dai file JSON giornalieri.
+    Per ogni servizio, crea liste di valori per queue_time, service_time, response_time.
+    Se response_time non è presente, viene calcolato come queue_time + service_time.
+    Restituisce: dict { "Service:metric": [valori,...] }
     """
     service_data = {}
     with open(file_path, 'r') as f:
@@ -15,111 +15,93 @@ def read_stats(file_path, n):
         for line in f:
             if first:
                 first = False
-                continue  # skip metadata
+                continue
             day = json.loads(line)
             stats = day.get("stats", {})
             for service_name, service_stats in stats.items():
-                # For each metric (queue_time, executing_time)
-                for metric in ['queue_time', 'executing_time']:
+                queue_values = service_stats['data'].get('queue_time', [])
+                service_values = service_stats['data'].get('executing_time', [])
+                min_len = min(len(queue_values), len(service_values))
+                response_values = [queue_values[i] + service_values[i] for i in range(min_len)]
+
+                metrics_map = {
+                    'queue_time': queue_values,
+                    'service_time': service_values,
+                    'response_time': response_values
+                }
+
+                for metric, values in metrics_map.items():
                     key = f"{service_name}:{metric}"
                     if key not in service_data:
                         service_data[key] = []
                     if len(service_data[key]) >= n:
                         continue
-                    service_data[key].extend(service_stats['data'][metric])
-                    if len(service_data[key]) > n:
-                        service_data[key] = service_data[key][:n]
+                    service_data[key].extend(values[:n - len(service_data[key])])
     return service_data
 
-
-def autocorrelation_stats(k, data):
+def computeBatchMeans(data, batch_count):
     """
-    Computes mean, stdev, and autocorrelation coefficients up to lag k for a list of floats.
-    Returns mean and stdev.
+    Divide i dati in batch_count batch e ritorna le medie dei batch.
     """
-    SIZE = k + 1
-    n = len(data)
-    if n <= k:
-        print("Error: Number of data points must be greater than k.")
-        return
-
-    hold = data[:SIZE]
-    cosum = [0.0 for _ in range(SIZE)]
-    sum_x = sum(hold)
-    p = 0
-    i = SIZE
-
-    # Main loop
-    while i < n:
-        for j in range(SIZE):
-            cosum[j] += hold[p] * hold[(p + j) % SIZE]
-        x = data[i]
-        sum_x += x
-        hold[p] = x
-        p = (p + 1) % SIZE
-        i += 1
-
-    # Flush the circular buffer
-    for _ in range(SIZE):
-        for j in range(SIZE):
-            cosum[j] += hold[p] * hold[(p + j) % SIZE]
-        hold[p] = 0.0
-        p = (p + 1) % SIZE
-
-    mean = sum_x / n
-    for j in range(SIZE):
-        cosum[j] = (cosum[j] / (n - j)) - (mean * mean)
-
-    if cosum[0] == 0:
-        return mean, sqrt(cosum[0])
-
-    return mean, sqrt(cosum[0])
-
-
-def computeMeanAndStdev(data, k):
-    """
-    Splits data into k batches, computes mean and stddev for each batch.
-    Returns two lists: means, stddevs (length k)
-    """
-    batch_size = len(data) // k
+    batch_size = len(data) // batch_count
     means = []
-    stddevs = []
-    for i in range(k):
-        batch = data[i * batch_size:(i + 1) * batch_size]
+    for i in range(batch_count):
+        batch = data[i*batch_size:(i+1)*batch_size]
         if not batch:
             continue
-        m = sum(batch) / len(batch)
-        s = sqrt(sum((x - m) ** 2 for x in batch) / len(batch))
+        m = sum(batch)/len(batch)
         means.append(m)
-        stddevs.append(s)
-    return means, stddevs
+    return means
 
+def computeBatchStdev(data, batch_count):
+    """
+    Divide i dati in batch_count batch e ritorna le deviazioni standard dei batch.
+    """
+    batch_size = len(data) // batch_count
+    stdevs = []
+    for i in range(batch_count):
+        batch = data[i*batch_size:(i+1)*batch_size]
+        if not batch:
+            continue
+        m = sum(batch)/len(batch)
+        s = sqrt(sum((x - m)**2 for x in batch)/len(batch))
+        stdevs.append(s)
+    return stdevs
 
 def getStudent(k):
+    """
+    Restituisce il t-critico per un intervallo di confidenza al 95%.
+    """
     alpha = 0.05
-    val = rvms.idfStudent(k - 1, 1 - alpha / 2)
-    return val
+    return rvms.idfStudent(k - 1, 1 - alpha/2)
 
 
 # =============================
 # Test manuale (solo se eseguito direttamente)
 # =============================
 if __name__ == "__main__":
-    n = 64 * 100  # oppure 143*50
+    n = 64 * 100
 
     stats = read_stats('transient_analysis_json/daily_stats.json', n)
     batchesMean = {}
     batchesStdev = {}
 
-    # calculate batch means and stdevs
+    # Calcolo batch means e stdev
     for service, data in stats.items():
-        mean, std = computeMeanAndStdev(data, 64)
-        batchesMean[service] = mean
-        batchesStdev[service] = std
+        means = computeBatchMeans(data, 64)
+        stdevs = computeBatchStdev(data, 64)
+        batchesMean[service] = means
+        batchesStdev[service] = stdevs
 
-    # calculate autocorrelation on batch means and confidence interval
-    for service, data in batchesMean.items():
+    # Calcolo intervalli di confidenza
+    for service, means in batchesMean.items():
+        k_eff = len(means)
+        if k_eff < 2:
+            continue
+        mean_sim = sum(means)/k_eff
+        var_sim = sum((x - mean_sim)**2 for x in means)/(k_eff - 1)
+        se = sqrt(var_sim/k_eff)
+        tcrit = getStudent(k_eff)
+        ci = (mean_sim - tcrit*se, mean_sim + tcrit*se)
         print(f"\nService: {service}")
-        mean, stddev = autocorrelation_stats(20, data)
-        student = getStudent(64)
-        print(f"95% confidence interval for the mean: {mean}+-{student * (stddev) / sqrt(len(data)):.2f}")
+        print(f"Media simulata = {mean_sim:.4f}, 95% CI = [{ci[0]:.4f}, {ci[1]:.4f}]")
