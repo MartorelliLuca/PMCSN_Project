@@ -28,8 +28,8 @@
       "name": "Autenticazione",
       "serviceRate": 2.252,
       "serversNumber": 4,
-      "successProbability": 0.75,
-      "compilazionePrecompilataProbability": 0.8
+      "successProbability": 0.96,
+      "compilazionePrecompilataProbability": 0.78
     },
     "date": {
       "start": "2025-05-01",

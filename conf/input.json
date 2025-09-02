@@ -9,7 +9,7 @@
   },
   "compilazionePrecompilata": {
     "name": "CompilazionePrecompilata",
-    "serversNumber": 10,
+    "serversNumber": 8,
     "mean": 30,
     "variance": 0.6931471806,
     "successProbability": 0.85
@@ -29,8 +29,8 @@
     "name": "Autenticazione",
     "serviceRate": 2.252,
     "serversNumber": 4,
-    "successProbability": 0.75,
-    "compilazionePrecompilataProbability": 0.80
+    "successProbability": 0.96,
+    "compilazionePrecompilataProbability": 0.78
   },
   "date": {
     "start": "2025-05-01",
