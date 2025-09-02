@@ -41,11 +41,11 @@ class SimulationEngine:
             with conf_path.open("r", encoding="utf-8") as f:
                 data = json.load(f)
             rate = float(data["arrival_rate"])
-        return [rate] * 365
+        return [rate] * 400
     
 
     def getAccumulationArrivals(self) -> list[float]:
-        return [0.159+0.2] * 365
+        return [0.159+0.18] * 400
 
     def run_transient_analysis(self, n_replicas: int = 2, seed_base: int = 123456789):
         """
@@ -73,7 +73,7 @@ class SimulationEngine:
             end_date = startingBlock.end_timestamp.replace(year=startingBlock.end_timestamp.year + shift_years)
             endBlock.setWorkingStatus(True)
             accumulating = True
-            finishAccumulationDate = start_date + timedelta(days=1)
+            finishAccumulationDate = start_date + timedelta(hours=48)
             startingBlock.start_timestamp = start_date
             startingBlock.current_time = start_date
             startingBlock.end_timestamp = end_date
@@ -85,8 +85,8 @@ class SimulationEngine:
                 event = event[0] if isinstance(event, list) else event
                 if event.handler:
 
-                    eventdate=event.timestamp.date()
-                    if eventdate > finishAccumulationDate.date() and accumulating:
+                    eventdate=event.timestamp
+                    if eventdate > finishAccumulationDate and accumulating:
                         print(f"--- Fine accumulo, inizio raccolta dati il {eventdate} ---")
                         endBlock.setWorkingStatus(True)
                         accumulating = False    

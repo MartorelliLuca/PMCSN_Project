@@ -67,7 +67,7 @@ def main():
     elif scelta_simulazione == "6":
         # Avvio simulazione
         print("\n--- Avvio della simulazione ---\n")
-        engine.run_transient_analysis(n_replicas=10, seed_base=123456789)
+        engine.run_transient_analysis(n_replicas=1, seed_base=123456789)
 
     else:
         print("Scelta non valida. Uscita.")
