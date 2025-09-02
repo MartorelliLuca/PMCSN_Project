@@ -18,13 +18,16 @@ plt.ioff()
 plt.style.use('default')
 
 def load_stats_data(filename):
-    """Carica i dati dal file JSON delle statistiche"""
+    """Carica SOLO i daily_summary dal file JSON delle statistiche"""
     data = []
     with open(filename, 'r') as f:
         for line in f:
             if line.strip():
-                data.append(json.loads(line))
+                obj = json.loads(line)
+                if obj.get("type") == "daily_summary":
+                    data.append(obj)
     return data
+
 
 def extract_queue_data(data):
     """Estrae i dati delle code da tutti i giorni"""
@@ -269,104 +272,6 @@ def print_queue_summary(queue_data, daily_summaries):
         print(f"  Tempo di risposta medio E(T_S): {tempo_risposta_medio:.2f} s")
 
 
-def analyze_transient_analysis_directory(transient_dir="transient_analysis_json", output_dir="graphs/transient_avg"):
-    """
-    Analizza tutti i file JSON nella directory transient_analysis_json/,
-    genera sia grafici medi che grafici di confronto tra repliche.
-    """
-    if not os.path.exists(transient_dir):
-        print(f"Directory {transient_dir}/ non trovata. Nessuna analisi eseguita.")
-        return
-    
-    json_files = [os.path.join(transient_dir, f) for f in os.listdir(transient_dir) if f.endswith(".json")]
-    if not json_files:
-        print(f"Nessun file JSON trovato in {transient_dir}/. Nessuna analisi eseguita.")
-        return
-
-    print(f"\n📊 Analisi transitoria: trovati {len(json_files)} file in {transient_dir}/")
-    
-    # Dati globali
-    all_queue_data = defaultdict(lambda: {
-        'queue_times': [],
-        'execution_times': [],
-        'queue_lengths': [],
-        'visits': []
-    })
-    all_daily_summaries = []
-
-    # Dati per replica (serve per confronti)
-    per_replica_data = []
-
-    for file in json_files:
-        print(f"  Caricamento {file} ...")
-        data = load_stats_data(file)
-        queue_data, daily_summaries = extract_queue_data(data)
-
-        per_replica_data.append((os.path.basename(file), queue_data, daily_summaries))
-
-        # Aggiungi ai dataset globali
-        for qname, qdata in queue_data.items():
-            all_queue_data[qname]['queue_times'].extend(qdata['queue_times'])
-            all_queue_data[qname]['execution_times'].extend(qdata['execution_times'])
-            all_queue_data[qname]['queue_lengths'].extend(qdata['queue_lengths'])
-            all_queue_data[qname]['visits'].extend(qdata['visits'])
-        all_daily_summaries.extend(daily_summaries)
-
-    # Genera cartella output
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-
-    # --- 1) Grafici medi ---
-    print("\n📈 Generazione grafici medi su tutte le repliche...")
-    queue_names = list(all_queue_data.keys())
-    for qname in queue_names:
-        fig, axes = plt.subplots(2, 3, figsize=(20, 12))
-        fig.suptitle(f'Analisi Media - {qname}', fontsize=16)
-
-        plot_queue_time_distribution(qname, all_queue_data[qname]['queue_times'], axes[0,0])
-        plot_execution_time_distribution(qname, all_queue_data[qname]['execution_times'], axes[0,1])
-        plot_wait_times_over_time(qname, all_queue_data[qname]['queue_times'], axes[0,2])
-        plot_queue_length_over_time(qname, all_queue_data[qname]['queue_lengths'], axes[1,0])
-
-        # Correlazione
-        queue_times = all_queue_data[qname]['queue_times']
-        exec_times = all_queue_data[qname]['execution_times']
-        if queue_times and exec_times and len(queue_times) == len(exec_times):
-            axes[1,1].scatter(queue_times, exec_times, alpha=0.6)
-            axes[1,1].set_xlabel('Tempo di Attesa (s)')
-            axes[1,1].set_ylabel('Tempo di Esecuzione (s)')
-            axes[1,1].set_title('Correlazione Attesa vs Esecuzione')
-            axes[1,1].grid(True, alpha=0.3)
-        else:
-            axes[1,1].text(0.5, 0.5, 'Dati non correlabili',
-                           transform=axes[1,1].transAxes, ha='center', va='center')
-
-        plot_temporal_analysis(qname, all_queue_data[qname], axes[1,2])
-
-        plt.tight_layout()
-        plt.savefig(f"{output_dir}/analisi_media_{qname.lower()}.png", dpi=300, bbox_inches='tight')
-        plt.close()
-
-    # --- 2) Grafici di confronto ---
-    print("\n📊 Generazione grafici di confronto tra repliche...")
-    for qname in queue_names:
-        fig, ax = plt.subplots(figsize=(12, 6))
-        for rep_name, queue_data, _ in per_replica_data:
-            q_times = queue_data.get(qname, {}).get('queue_times', [])
-            if q_times:
-                moving_avg = pd.Series(q_times).rolling(window=max(10, len(q_times)//50)).mean()
-                ax.plot(moving_avg, label=rep_name.replace(".json", ""))
-        ax.set_title(f'{qname} - Confronto tra repliche (Media Mobile)')
-        ax.set_xlabel('Evento #')
-        ax.set_ylabel('Tempo di Attesa (s)')
-        ax.legend()
-        ax.grid(True, alpha=0.3)
-        plt.tight_layout()
-        plt.savefig(f"{output_dir}/confronto_{qname.lower()}.png", dpi=300, bbox_inches='tight')
-        plt.close()
-
-    print(f"\n✅ Analisi completata: medie + confronti.")
-    print(f"📁 Grafici salvati in: {output_dir}/")
 
 
 if __name__ == "__main__":
@@ -382,7 +287,8 @@ if __name__ == "__main__":
     folder_name = input("Inserisci il nome della cartella per i grafici: ").strip()
     output_dir = os.path.join(base_path, folder_name)
 
-    stats_file = "daily_stats.json"
+    # Forza il path del file JSON da usare
+    stats_file = os.path.join("transient_analysis_json", "daily_stats.json")
     
     print("Avvio analisi statistiche delle code...")
     print(f"Caricamento dati da: {stats_file}")
@@ -411,6 +317,3 @@ if __name__ == "__main__":
         print(f"Errore durante l'analisi: {e}")
         import traceback
         traceback.print_exc()
-    
-    # 🔥 Analisi media di tutte le repliche transienti
-    analyze_transient_analysis_directory()

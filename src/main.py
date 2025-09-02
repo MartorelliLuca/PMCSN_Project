@@ -39,10 +39,10 @@ def main():
         print("\n--- Avvio della simulazione ---\n")
         engine.normale_single_iteration(daily_rates)
     elif scelta_simulazione == "2":
-        daily_rates = engine.getArrivalsRatesToInfinite()
+        daily_rates = engine.getArrivalsEqualsRates()
          # Avvio simulazione
         print("\n--- Avvio della simulazione ---\n")
-        engine.normale(daily_rates)
+        engine.normale_single_iteration(daily_rates)
     elif scelta_simulazione == "3":
         engine = ExponentialEngine() 
         daily_rates = engine.getArrivalsRatesToInfinite()

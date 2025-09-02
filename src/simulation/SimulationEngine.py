@@ -22,15 +22,25 @@ class SimulationEngine:
     """Gestisce l'esecuzione della simulazione, orchestrando i blocchi di servizio e gli eventi."""
 
     def getArrivalsEqualsRates(self) -> list[float]:
-        """Crea un array costante di arrivi per l’analisi del transitorio."""
-        conf_path = Path(__file__).resolve().parents[2] / "conf" / "arrival_rate.json"
-        if not conf_path.exists():
-            raise FileNotFoundError(f"File non trovato: {conf_path}")
-
-        with conf_path.open("r", encoding="utf-8") as f:
-            data = json.load(f)
-
-        rate = float(data["arrival_rate"])
+        """Crea un array costante di arrivi per l’analisi del transitorio o per un mese specifico."""
+        month = "mean"
+        if month:
+            conf_path = Path(__file__).resolve().parents[2] / "conf" / "months_arrival_rate.json"
+            if not conf_path.exists():
+                raise FileNotFoundError(f"File non trovato: {conf_path}")
+            with conf_path.open("r", encoding="utf-8") as f:
+                data = json.load(f)
+            key = f"{month.lower()}_arrival_rate"
+            if key not in data:
+                raise KeyError(f"Chiave non trovata: {key}")
+            rate = float(data[key])
+        else:
+            conf_path = Path(__file__).resolve().parents[2] / "conf" / "arrival_rate.json"
+            if not conf_path.exists():
+                raise FileNotFoundError(f"File non trovato: {conf_path}")
+            with conf_path.open("r", encoding="utf-8") as f:
+                data = json.load(f)
+            rate = float(data["arrival_rate"])
         return [rate] * 365
     
 
