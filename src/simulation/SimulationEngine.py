@@ -240,7 +240,7 @@ class SimulationEngine:
 
         endBlock.finalize()
 
-    def normale_with_replication(self, n_replicas: int = 10, seed_base: int = 123456789):
+    def normale_with_replication(self, n_replicas: int = 10, seed_base: int = 123456789, daily_rates: list[float] = None):
         """
         Metodo delle replicazioni anche per la simulazione "normale".
         Ogni replica avanza di un anno rispetto alla precedente.
@@ -253,8 +253,6 @@ class SimulationEngine:
             self.event_queue = EventQueue()
             startingBlock, instradamento, autenticazione, compilazionePrecompilata, invioDiretto, inValutazione, endBlock = self.buildBlocks(replica_id=rep)
             endBlock.setStartBlock(startingBlock)
-
-            daily_rates = self.getArrivalsRates()
 
             startingBlock.setDailyRates(daily_rates)
 
