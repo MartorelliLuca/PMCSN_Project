@@ -23,7 +23,7 @@ class SimulationEngine:
 
     def getArrivalsEqualsRates(self) -> list[float]:
         """Crea un array costante di arrivi per l’analisi del transitorio o per un mese specifico."""
-        month = "mean"
+        month = "max"
         if month:
             conf_path = Path(__file__).resolve().parents[2] / "conf" / "months_arrival_rate.json"
             if not conf_path.exists():
@@ -191,12 +191,53 @@ class SimulationEngine:
 
         return startingBlock, instradamento, autenticazione, compilazionePrecompilata, invioDiretto, inValutazione, endBlock
 
+
+    def buildBlocksSingleIteration(self):
+        cfg_path = Path(__file__).resolve().parents[2] / "conf" / "input.json"
+        if not cfg_path.exists():
+            raise FileNotFoundError(f"Config non trovata: {cfg_path}")
+
+        with cfg_path.open("r", encoding="utf-8") as f:
+            cfg = json.load(f)
+
+        # Passa il replica_id qui
+        endBlock                 = EndBlock()
+        inValutazione            = self._instantiate(cfg, "inValutazione")
+        compilazionePrecompilata = self._instantiate(cfg, "compilazionePrecompilata")
+        invioDiretto             = self._instantiate(cfg, "invioDiretto")
+        instradamento            = self._instantiate(cfg, "instradamento")
+        autenticazione           = self._instantiate(cfg, "autenticazione")
+
+        start_date = datetime.fromisoformat(cfg["date"]["start"])
+        end_date   = datetime.fromisoformat(cfg["date"]["end"]) + timedelta(days=1)
+
+        startingBlock = StartBlock(
+            "Start",
+            start_timestamp=datetime.combine(start_date, datetime.min.time()),
+            end_timestamp=datetime.combine(end_date, datetime.min.time())
+        )
+
+        # Wiring
+        startingBlock.setNextBlock(instradamento)
+        instradamento.setQueueFullFallBackBlock(endBlock)
+        inValutazione.setInstradamento(instradamento)
+        autenticazione.setInstradamento(instradamento)
+        autenticazione.setCompilazione(compilazionePrecompilata)
+        autenticazione.setInvioDiretto(invioDiretto)
+        compilazionePrecompilata.setNextBlock(inValutazione)
+        invioDiretto.setNextBlock(inValutazione)
+        inValutazione.setEnd(endBlock)
+        instradamento.setNextBlock(autenticazione)
+        endBlock.setStartBlock(startingBlock)
+
+        return startingBlock, instradamento, autenticazione, compilazionePrecompilata, invioDiretto, inValutazione, endBlock
+
     def normale_single_iteration(self, daily_rates):
         """Avvia la simulazione con i tassi di arrivo specificati."""
         rngs.plantSeeds(1)
         self.event_queue = EventQueue()
 
-        startingBlock, instradamento, autenticazione, compilazionePrecompilata, invioDiretto, inValutazione, endBlock = self.buildBlocks()
+        startingBlock, instradamento, autenticazione, compilazionePrecompilata, invioDiretto, inValutazione, endBlock = self.buildBlocksSingleIteration()
 
         if daily_rates is None:
             daily_rates = self.getArrivalsRates()
