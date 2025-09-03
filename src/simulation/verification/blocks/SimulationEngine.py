@@ -197,6 +197,19 @@ class SimulationEngine:
                 ])
 
         print("\n=== Confronto simulazione vs valori teorici ===")
-        print(tabulate(rows, headers=["Servizio", "Metrica", "Teorico", "Simulato", "95% CI", "Coerente?"]))
+        services = {}
+        for row in rows:
+            service = row[0]
+            if service not in services:
+                services[service] = []
+            services[service].append(row[1:]) 
+        for service, metrics in services.items():
+            print(f"\n📌 Servizio: {service}")
+            print(tabulate(
+                metrics,
+                headers=["Metrica", "Teorico", "Simulato", "95% CI", "Coerente?"],
+                tablefmt="fancy_grid"
+            ))
+        print("\n")  # Riga vuota extra per leggibilità
 
         return rows

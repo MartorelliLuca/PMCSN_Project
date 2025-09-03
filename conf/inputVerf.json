@@ -2,25 +2,25 @@
     "inValutazione": {
       "name": "InValutazione",
       "serversNumber": 10,
-      "mean": 43,
+      "mean": 39.447,
       "variance": 0.0,
       "successProbability": 0.96
     },
     "compilazionePrecompilata": {
       "name": "CompilazionePrecompilata",
       "serversNumber": 8,
-      "mean": 30.0,
+      "mean": 34.3784,
       "variance": 0.6931471806,
       "successProbability": 0.85
     },
     "invioDiretto": {
       "name": "InvioDiretto",
-      "mean": 3.0,
+      "mean": 3,
       "variance": 0.0
     },
     "instradamento": {
       "name": "Instradamento",
-      "serviceRate": 3.0,
+      "serviceRate": 3,
       "serversNumber": 3,
       "queueMaxLenght": 2000
     },
@@ -33,7 +33,7 @@
     },
     "date": {
       "start": "2025-05-01",
-      "end": "2025-12-31"
+      "end": "2025-05-31"
     }
   }
   
