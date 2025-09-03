@@ -8,9 +8,10 @@ import pandas as pd
 def load_stats_data(filename):
     data = []
     with open(filename, 'r') as f:
-        for line in f:
-            if line.strip():
-                data.append(json.loads(line))
+        lines = [line for line in f if line.strip()]
+        lines = lines[:-20] if len(lines) > 20 else []
+        for line in lines:
+            data.append(json.loads(line))
     return data
 
 def extract_queue_data(data):
@@ -87,48 +88,25 @@ def plot_response_time_averages(queue_name, queue, exec, output_dir):
     ax.set_title(f"{queue_name} - Media Mobile Tempi di Risposta (queue + mobile mean exec)")
     ax.set_xlabel("Evento #")
     ax.set_ylabel("Tempo di Risposta (s)")
-    #ax.set_yscale('log')
     all_vals = []
     for label in queue:
         q_times = queue[label]
         e_times = exec[label]
         if len(q_times) < 10 or len(e_times) < 10:
             continue
-        # Mobile mean of exec
         exec_moving = pd.Series(e_times).rolling(window=1000, min_periods=1).mean().tolist()
-        # Sum queue + mobile mean exec
         response_times = [q + e for q, e in zip(q_times, exec_moving)]
         moving_avg = pd.Series(response_times).rolling(window=100, min_periods=1).mean()
-        ax.plot(moving_avg, label=label)
+        ax.plot(moving_avg, label=label, linewidth=0.8)  # Linea più sottile
         all_vals.extend(response_times)
     if all_vals:
         mean_val = np.mean(all_vals)
-        ax.axhline(mean_val, color='red', linestyle='--', label=f"Mean: {mean_val:.2f}")
+        ax.axhline(mean_val, color='red', linestyle='--', label=f"Mean: {mean_val:.2f}", linewidth=1)
     apply_log_scale(ax, all_vals, queue_name)
     ax.grid(True, alpha=0.3)
     ax.legend()
     plt.tight_layout()
-    plt.savefig(f"{output_dir}/risposta_media_mobile_{queue_name.lower()}.png", dpi=300)
-    plt.close()
-
-def plot_response_times(queue_name, data, output_dir):
-    fig, ax = plt.subplots(figsize=(10, 6))
-    ax.set_title(f"{queue_name} - Tempo di Risposta (Attesa + 66000s)")
-    ax.set_xlabel("Evento #")
-    ax.set_ylabel("Tempo di Risposta (s)")
-    all_vals = []
-    for label, q_times in data.items():
-        if len(q_times) < 10:
-            continue
-        response_times = [qt + 66000 for qt in q_times]
-        moving_avg = pd.Series(response_times).rolling(window=max(10, len(response_times)//50)).mean()
-        ax.plot(moving_avg, label=label)
-        all_vals.extend(response_times)
-    apply_log_scale(ax, all_vals, queue_name)
-    ax.grid(True, alpha=0.3)
-    ax.legend()
-    plt.tight_layout()
-    plt.savefig(f"{output_dir}/response_time_{queue_name.lower()}.png", dpi=300)
+    plt.savefig(f"{output_dir}/tempi_di_risposta_{queue_name.lower()}.png", dpi=300)
     plt.close()
 
 def analyze_transient_analysis_directory(transient_dir="transient_analysis_json", output_dir="graphs/transient_avg"):
@@ -166,8 +144,7 @@ def analyze_transient_analysis_directory(transient_dir="transient_analysis_json"
         plot_aggregated_averages(queue_name, all_queue_times[queue_name], output_dir)
         plot_comparison_chart(queue_name, all_queue_times[queue_name], output_dir)
         plot_response_time_averages(queue_name, all_queue_times[queue_name],all_exec_times[queue_name], output_dir)
-        plot_response_times(queue_name, all_queue_times[queue_name], output_dir)
-
+        
     print(f"\n✅ Analisi completata. Grafici salvati in: {output_dir}/")
 
 if __name__ == "__main__":

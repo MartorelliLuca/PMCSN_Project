@@ -41,13 +41,13 @@ class SimulationEngine:
             with conf_path.open("r", encoding="utf-8") as f:
                 data = json.load(f)
             rate = float(data["arrival_rate"])
-        return [rate] * 400
+        return [rate] * 732
     
 
     def getAccumulationArrivals(self) -> list[float]:
-        return [0.159+0.18] * 400
+        return [0.159+0.18] * 732
 
-    def run_transient_analysis(self, n_replicas: int = 2, seed_base: int = 123456789):
+    def run_transient_analysis(self, n_replicas, seed_base):
         """
         Metodo delle replicazioni per analisi del transitorio.
         Ogni replica avanza di un anno rispetto alla precedente.
@@ -68,7 +68,7 @@ class SimulationEngine:
             startingBlock.setDailyRates(accumulationARrivals)
 
             # Sposta l'intervallo temporale di 1 anno per ogni replica
-            shift_years = rep
+            shift_years = rep+1
             start_date = startingBlock.start_timestamp.replace(year=startingBlock.start_timestamp.year + shift_years)
             end_date = startingBlock.end_timestamp.replace(year=startingBlock.end_timestamp.year + shift_years)
             endBlock.setWorkingStatus(True)
@@ -151,7 +151,7 @@ class SimulationEngine:
 
         return cls(**{f: data[f] for f in fields})
 
-    def buildBlocks(self, replica_id: int = None):
+    def buildBlocks(self, replica_id):
         cfg_path = Path(__file__).resolve().parents[2] / "conf" / "input.json"
         if not cfg_path.exists():
             raise FileNotFoundError(f"Config non trovata: {cfg_path}")
@@ -191,7 +191,7 @@ class SimulationEngine:
 
         return startingBlock, instradamento, autenticazione, compilazionePrecompilata, invioDiretto, inValutazione, endBlock
 
-    def normale_single_iteration(self, daily_rates: list[float] = None):
+    def normale_single_iteration(self, daily_rates):
         """Avvia la simulazione con i tassi di arrivo specificati."""
         rngs.plantSeeds(1)
         self.event_queue = EventQueue()
@@ -216,7 +216,7 @@ class SimulationEngine:
 
         endBlock.finalize()
 
-    def normale_with_constant_replication(self, daily_rates: list[float] = None):
+    def normale_with_constant_replication(self, daily_rates):
         """Avvia la simulazione con i tassi di arrivo specificati."""
         rngs.plantSeeds(1)
         self.event_queue = EventQueue()
@@ -241,7 +241,7 @@ class SimulationEngine:
 
         endBlock.finalize()
 
-    def normale_with_replication(self, n_replicas: int = 10, seed_base: int = 123456789, daily_rates: list[float] = None):
+    def normale_with_replication(self, n_replicas, seed_base, daily_rates):
         """
         Metodo delle replicazioni anche per la simulazione "normale".
         Ogni replica avanza di un anno rispetto alla precedente.
