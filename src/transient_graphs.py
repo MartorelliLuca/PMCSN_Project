@@ -87,13 +87,17 @@ def plot_response_time_averages(queue_name, data, output_dir):
     ax.set_title(f"{queue_name} - Media Mobile Tempi di Risposta (tutte le repliche)")
     ax.set_xlabel("Evento #")
     ax.set_ylabel("Tempo di Risposta (s)")
+    ax.set_yscale('log')
     all_vals = []
     for label, r_times in data.items():
         if len(r_times) < 10:
             continue
-        moving_avg = pd.Series(r_times).rolling(window=max(10, len(r_times)//50)).mean()
+        moving_avg = pd.Series(r_times).rolling(window=1200).mean()
         ax.plot(moving_avg, label=label)
         all_vals.extend(r_times)
+    if all_vals:
+        mean_val = np.mean(all_vals)
+        ax.axhline(mean_val, color='red', linestyle='--', label=f"Mean: {mean_val:.2f}")
     apply_log_scale(ax, all_vals, queue_name)
     ax.grid(True, alpha=0.3)
     ax.legend()
