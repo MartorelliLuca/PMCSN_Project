@@ -82,19 +82,25 @@ def plot_comparison_chart(queue_name, replica_data, output_dir):
     plt.savefig(f"{output_dir}/confronto_{queue_name.lower()}.png", dpi=300)
     plt.close()
 
-def plot_response_time_averages(queue_name, data, output_dir):
+def plot_response_time_averages(queue_name, queue, exec, output_dir):
     fig, ax = plt.subplots(figsize=(10, 6))
-    ax.set_title(f"{queue_name} - Media Mobile Tempi di Risposta (tutte le repliche)")
+    ax.set_title(f"{queue_name} - Media Mobile Tempi di Risposta (queue + mobile mean exec)")
     ax.set_xlabel("Evento #")
     ax.set_ylabel("Tempo di Risposta (s)")
-    ax.set_yscale('log')
+    #ax.set_yscale('log')
     all_vals = []
-    for label, r_times in data.items():
-        if len(r_times) < 10:
+    for label in queue:
+        q_times = queue[label]
+        e_times = exec[label]
+        if len(q_times) < 10 or len(e_times) < 10:
             continue
-        moving_avg = pd.Series(r_times).rolling(window=1200).mean()
+        # Mobile mean of exec
+        exec_moving = pd.Series(e_times).rolling(window=1000, min_periods=1).mean().tolist()
+        # Sum queue + mobile mean exec
+        response_times = [q + e for q, e in zip(q_times, exec_moving)]
+        moving_avg = pd.Series(response_times).rolling(window=100, min_periods=1).mean()
         ax.plot(moving_avg, label=label)
-        all_vals.extend(r_times)
+        all_vals.extend(response_times)
     if all_vals:
         mean_val = np.mean(all_vals)
         ax.axhline(mean_val, color='red', linestyle='--', label=f"Mean: {mean_val:.2f}")
@@ -140,7 +146,7 @@ def analyze_transient_analysis_directory(transient_dir="transient_analysis_json"
 
     all_queue_times = defaultdict(lambda: defaultdict(list))
     all_response_times = defaultdict(lambda: defaultdict(list))
-
+    all_exec_times = defaultdict(lambda: defaultdict(list))
     for file in json_files:
         path = os.path.join(transient_dir, file)
         print(f"  Caricamento {file} ...")
@@ -150,6 +156,8 @@ def analyze_transient_analysis_directory(transient_dir="transient_analysis_json"
         for queue_name, q_data in queue_data.items():
             all_queue_times[queue_name][file] = q_data['queue_times']
             all_response_times[queue_name][file] = q_data['response_times']
+            all_exec_times[queue_name][file] = q_data['execution_times']
+
 
     os.makedirs(output_dir, exist_ok=True)
 
@@ -157,7 +165,7 @@ def analyze_transient_analysis_directory(transient_dir="transient_analysis_json"
         print(f"\n🔍 Analisi per la coda: {queue_name}")
         plot_aggregated_averages(queue_name, all_queue_times[queue_name], output_dir)
         plot_comparison_chart(queue_name, all_queue_times[queue_name], output_dir)
-        plot_response_time_averages(queue_name, all_response_times[queue_name], output_dir)
+        plot_response_time_averages(queue_name, all_queue_times[queue_name],all_exec_times[queue_name], output_dir)
         plot_response_times(queue_name, all_queue_times[queue_name], output_dir)
 
     print(f"\n✅ Analisi completata. Grafici salvati in: {output_dir}/")
