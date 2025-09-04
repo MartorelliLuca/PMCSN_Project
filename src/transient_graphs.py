@@ -9,7 +9,7 @@ def load_stats_data(filename):
     data = []
     with open(filename, 'r') as f:
         lines = [line for line in f if line.strip()]
-        lines = lines[:-20] if len(lines) > 20 else []
+        lines = lines[:-40] if len(lines) > 40 else []
         for line in lines:
             data.append(json.loads(line))
     return data
@@ -46,7 +46,7 @@ def apply_log_scale(ax, values, queue_name):
         return
     vmax = max(values)
     if queue_name == "InValutazione":
-        ax.set_ylim(0, 300000)
+        ax.set_ylim(0, 8000000)
 
 def plot_aggregated_averages(queue_name, data, output_dir):
     fig, ax = plt.subplots(figsize=(10, 6))
@@ -85,7 +85,7 @@ def plot_comparison_chart(queue_name, replica_data, output_dir):
 
 def plot_response_time_averages(queue_name, queue, exec, output_dir):
     fig, ax = plt.subplots(figsize=(10, 6))
-    ax.set_title(f"{queue_name} - Media Mobile Tempi di Risposta (queue + mobile mean exec)")
+    ax.set_title(f"{queue_name} - Tempi di Risposta (Queue Time + Exec Time)")
     ax.set_xlabel("Evento #")
     ax.set_ylabel("Tempo di Risposta (s)")
     all_vals = []
@@ -100,7 +100,7 @@ def plot_response_time_averages(queue_name, queue, exec, output_dir):
         ax.plot(moving_avg, label=label, linewidth=0.8)  # Linea più sottile
         all_vals.extend(response_times)
     if all_vals:
-        mean_val = np.mean(all_vals)
+        mean_val = np.mean(all_vals) #66425 #per il caso medio
         ax.axhline(mean_val, color='red', linestyle='--', label=f"Mean: {mean_val:.2f}", linewidth=1)
     apply_log_scale(ax, all_vals, queue_name)
     ax.grid(True, alpha=0.3)

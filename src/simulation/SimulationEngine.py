@@ -53,6 +53,8 @@ class SimulationEngine:
         Ogni replica avanza di un anno rispetto alla precedente.
         """
 
+        seeds_path = Path(__file__).resolve().parents[2] / "used_seeds.txt"
+
         for rep in range(n_replicas):
             print(f"\n--- Avvio replica {rep+1}/{n_replicas} ---")
             rngs.plantSeeds(1)
@@ -89,6 +91,11 @@ class SimulationEngine:
                     if eventdate > finishAccumulationDate and accumulating:
                         print(f"--- Fine accumulo, inizio raccolta dati il {eventdate} ---")
                         rngs.plantSeeds(seed_base)
+                        
+                        # Scrivi il seed usato su file
+                        with seeds_path.open("a", encoding="utf-8") as f:
+                            f.write(f"Replica {rep+1}: seed = {seed_base}\n")
+
                         endBlock.setWorkingStatus(True)
                         accumulating = False    
                         startingBlock.setDailyRates(daily_rates)
@@ -103,7 +110,6 @@ class SimulationEngine:
             print(f"✅ Replica {rep+1} completata! ({start_date.date()} → {end_date.date()})")
             
             seed_base = rngs.getSeed()
-
 
 
     def getArrivalsRates(self) -> list[float]:
@@ -287,9 +293,15 @@ class SimulationEngine:
         Metodo delle replicazioni anche per la simulazione "normale".
         Ogni replica avanza di un anno rispetto alla precedente.
         """
+        seeds_path = Path(__file__).resolve().parents[2] / "used_seeds.txt"
+
         for rep in range(n_replicas):
             print(f"\n--- Avvio replica {rep+1}/{n_replicas} ---")
             rngs.plantSeeds(seed_base)
+
+            # Scrivi il seed usato su file
+            with seeds_path.open("a", encoding="utf-8") as f:
+                f.write(f"Replica {rep+1}: seed = {seed_base}\n")
 
             # Costruisci i blocchi con replica_id
             self.event_queue = EventQueue()
