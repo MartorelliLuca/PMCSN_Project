@@ -5,6 +5,8 @@ from datetime import datetime, timedelta
 from models.person import Person
 from simulation.Event import Event
 from simulation.states.NormalState import NormalState
+from simulation.states.StateWithServiceTIme import StateWithServiceTime
+
 import json
 
 from simulation.blocks.StartBlock import StartBlock
@@ -75,6 +77,17 @@ class EndBlock(SimBlockInterface):
         self.day_summary["entrati"] = self.get_entrate_nel_sistema(self.workingDate)
 
         for queue, stats in self.daily_stats.items():
+         if isinstance(stats["visited"], dict) :
+            for queue_name in stats["visited"]:
+                if stats["visited"][queue_name] > 0:
+                    stats["queue_time"][queue_name] /= stats["visited"][queue_name]
+                    stats["queue_lenght"][queue_name] /= stats["visited"][queue_name]
+                    stats["executing_time"][queue_name] /= stats["visited"][queue_name]
+                else:
+                    stats["queue_time"][queue_name] = 0
+                    stats["queue_lenght"][queue_name] = 0
+                    stats["executing_time"][queue_name] = 0
+         else:
             if stats["visited"] > 0:
                 stats["queue_time"] /= stats["visited"]
                 stats["queue_lenght"] /= stats["visited"]
@@ -83,6 +96,9 @@ class EndBlock(SimBlockInterface):
                 stats["queue_time"] = 0
                 stats["queue_lenght"] = 0
                 stats["executing_time"] = 0
+        
+        
+        
         output = {
             "type": "daily_summary",
             "date": self.workingDate.isoformat(),
@@ -115,8 +131,52 @@ class EndBlock(SimBlockInterface):
             time_executing = (state.service_end_time-state.service_start_time).total_seconds() if state.service_start_time else None
             in_code= state.queue_length if state.queue_length else 0
 
-
-            if queue not in self.daily_stats:
+            if state and isinstance(state, StateWithServiceTime):
+             if queue not in self.daily_stats :
+                self.daily_stats[queue] ={
+                    "visited":{
+                        state.get_queue_name(): 1
+                    },
+                    "queue_time": {
+                        state.get_queue_name(): time_in_queue
+                    },
+                    "executing_time": {
+                        state.get_queue_name(): time_executing
+                    },
+                    "queue_lenght": {
+                        state.get_queue_name(): in_code 
+                    },
+                    "data": {
+                        state.get_queue_name(): {
+                            "queue_time": [time_in_queue,],
+                            "queue_lenght": [in_code,],
+                            "executing_time": [time_executing,],
+                        }
+                    }
+                }
+             elif state.get_queue_name() not in self.daily_stats[queue].get("visited", {}):
+                stat = self.daily_stats[queue]
+                stat["visited"][state.get_queue_name()] = 1
+                stat["queue_time"][state.get_queue_name()] = time_in_queue
+                stat["executing_time"][state.get_queue_name()] = time_executing
+                stat["queue_lenght"][state.get_queue_name()] = in_code
+                stat["data"][state.get_queue_name()] = {
+                            "queue_time": [time_in_queue,],
+                            "queue_lenght": [in_code,],
+                            "executing_time": [time_executing,],
+                        }
+             else:
+                stat = self.daily_stats[queue]
+                stat["visited"][state.get_queue_name()] += 1
+                stat["queue_time"][state.get_queue_name()] += time_in_queue
+                stat["executing_time"][state.get_queue_name()] += time_executing
+                stat["queue_lenght"][state.get_queue_name()] += in_code
+                if stat["visited"][state.get_queue_name()] < 50*50 and stat["visited"][state.get_queue_name()] % 50 == 0:
+                    stat["data"][state.get_queue_name()]["queue_time"].append(time_in_queue)
+                    stat["data"][state.get_queue_name()]["queue_lenght"].append(in_code)
+                    stat["data"][state.get_queue_name()]["executing_time"].append(time_executing)
+            else:
+             if queue not in self.daily_stats:
                 self.daily_stats[queue] = {
                     "visited": 1,
                     "queue_time": time_in_queue,
@@ -128,7 +188,7 @@ class EndBlock(SimBlockInterface):
                             "executing_time": [time_executing,],
                     } 
                 }
-            else:
+             else:
                 stat = self.daily_stats[queue]
                 stat["visited"] += 1
                 stat["queue_time"] += time_in_queue
