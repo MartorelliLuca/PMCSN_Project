@@ -73,7 +73,7 @@ class InValutazioneCodaPrioritaNP(SimBlockInterface):
 
     def getSuccess(self):
         from desPython import rngs
-        rngs.selectStream(self.stream_+100)
+        rngs.selectStream(self.stream+100)
         n=rvgs.Uniform(0,1)
         if n > self.accetpanceRate:
             return False
