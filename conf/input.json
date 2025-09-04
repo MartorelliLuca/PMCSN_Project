@@ -1,7 +1,7 @@
 {
   "inValutazione": {
     "name": "InValutazione",
-    "dipendenti": 160,
+    "dipendenti": 200,
     "pratichePerDipendente": 70,
     "mean": 66250.30,
     "variance": 30,
@@ -34,6 +34,6 @@
   },
   "date": {
     "start": "2025-05-01",
-    "end": "2025-09-30"
+    "end": "2025-11-30"
   }
 }
