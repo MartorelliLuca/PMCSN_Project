@@ -60,7 +60,7 @@ def main():
         daily_rates = engine.getArrivalsRates()
          # Avvio simulazione
         print("\n--- Avvio della simulazione ---\n")
-        engine.normale_with_replication(7, 123456789, daily_rates)
+        engine.normale_with_replication(16, 123456789, daily_rates)
     elif scelta_simulazione == "5":
         daily_rates = engine.getArrivalsEqualsRates()
          # Avvio simulazione

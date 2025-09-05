@@ -287,9 +287,10 @@ class SimulationEngine:
         Metodo delle replicazioni anche per la simulazione "normale".
         Ogni replica avanza di un anno rispetto alla precedente.
         """
+        rngs.plantSeeds(seed_base)
         for rep in range(n_replicas):
             print(f"\n--- Avvio replica {rep+1}/{n_replicas} ---")
-            rngs.plantSeeds(seed_base)
+            
 
             # Costruisci i blocchi con replica_id
             self.event_queue = EventQueue()
@@ -321,6 +322,3 @@ class SimulationEngine:
             # Finaliza la replica
             endBlock.finalize()
             print(f"✅ Replica {rep+1} completata! ({start_date.date()} → {end_date.date()})")
-
-            # Aggiorna il seed per la prossima replica
-            seed_base = rngs.getSeed()
