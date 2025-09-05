@@ -8,12 +8,12 @@ from desPython import rvgs
 
 class InValutazioneCodaPrioritaNP(SimBlockInterface):
     
-    def __init__(self, name, dipendenti, pratichePerDipendente, mean, variance, successProbability):
+    def __init__(self, name, serversNumber, mean, variance, successProbability):
         self.stream = 5
         self.name = name
         self.mean = mean              # media dei tempi di servizio
         self.variance = variance      # (non usata per l’esponenziale, ma la lascio per compatibilità)
-        self.serversNumber = dipendenti * pratichePerDipendente
+        self.serversNumber = serversNumber
         self.accetpanceRate = successProbability
 
         # Code separate in base al tipo

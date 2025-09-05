@@ -2,6 +2,7 @@ import sys
 from simulation.SimulationEngine import SimulationEngine as BaseEngine
 from simulation.SimulationEngineMigliorativa import SimulationEngine as MigliorativoEngine
 from simulation.verification.blocks.SimulationEngine import SimulationEngine as ExponentialEngine 
+from simulation.verification.SimulationEnginePriority import SimulationEngine as PriorityEngine
 
 
 
@@ -31,6 +32,7 @@ def main():
     print("4 - Simulazione orizzonte finito a tasso variabile Con Replicazioni")
     print("5 - Simulazione orizzonte finito a tasso costante Con Replicazioni\n")
     print("6 - Simulazione Transitoria")
+    print("7 - Verifica Modello Migliorativo\n")
     scelta_simulazione = input("Inserisci scelta: ").strip()
 
     if scelta_simulazione == "1":
@@ -68,6 +70,19 @@ def main():
         # Avvio simulazione
         print("\n--- Avvio della simulazione ---\n")
         engine.run_transient_analysis(7, 123456789)
+    elif scelta_simulazione == "7":
+        # Avvio simulazione
+        engine = PriorityEngine()
+        daily_rates = engine.getArrivalsRatesToInfinite()
+         # Avvio simulazione
+        print("\n--- Avvio della simulazione e analisi batch ---\n")
+        results = engine.run_and_analyze(
+            daily_rates=daily_rates,
+            n=64*100,
+            batch_count=64,
+            theo_json="theo_values.json"
+        )
+
 
     else:
         print("Scelta non valida. Uscita.")
