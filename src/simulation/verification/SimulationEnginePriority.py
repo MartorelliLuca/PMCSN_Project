@@ -202,7 +202,8 @@ class SimulationEngine:
                                     service_stats[full_service_name] = {
                                         'visited': [],
                                         'queue_time': [],
-                                        'execution_time': []
+                                        'execution_time': [],
+                                        'response_time': []
                                     }
                             
                             # Add daily values
@@ -213,13 +214,16 @@ class SimulationEngine:
                                 service_stats[full_service_name]['execution_time'].append(
                                     execution_time.get(priority, 0.0)
                                 )
+                                response_time = queue_time.get(priority, 0.0) + execution_time.get(priority, 0.0)
+                                service_stats[full_service_name]['response_time'].append(response_time)
                         else:
                         # Single queue (fallback for old format)
                             if 'InValutazione' not in service_stats:
                                 service_stats['InValutazione'] = {
                                     'visited': [],
                                     'queue_time': [],
-                                    'execution_time': []
+                                    'execution_time': [],
+                                    'response_time': []
                                 }
                         
                             service_stats['InValutazione']['visited'].append(visited)
@@ -229,14 +233,16 @@ class SimulationEngine:
                             service_stats['InValutazione']['execution_time'].append(
                                 service_data.get('executing_time', 0.0)
                             )
-                        
+                            response_time = service_data.get('queue_time', 0.0) + service_data.get('executing_time', 0.0)
+                            service_stats['InValutazione']['response_time'].append(response_time)
                     else:
                     # Handle regular services (single queue)
                         if service_name not in service_stats:
                             service_stats[service_name] = {
                                 'visited': [],
                                 'queue_time': [],
-                                'execution_time': []
+                                'execution_time': [],
+                                'response_time': []
                             }
                     
                         service_stats[service_name]['visited'].append(
@@ -248,13 +254,49 @@ class SimulationEngine:
                         service_stats[service_name]['execution_time'].append(
                             service_data.get('executing_time', 0.0)
                         )
-    
+                        response_time = service_data.get('queue_time', 0.0) + service_data.get('executing_time', 0.0)
+                        service_stats[service_name]['response_time'].append(response_time)
         return service_stats
 
 
     
 
-
+    def autocorr_stats(self,arr, k):
+        """
+        arr: list of floats
+        k: maximum lag
+        Returns: (autocorr_1, mean, stdev)
+        """
+        SIZE = k + 1
+        n = len(arr)
+        if n <= k:
+          raise ValueError("Number of data points must be greater than k.")
+        hold = arr[:SIZE]
+        cosum = [0.0 for _ in range(SIZE)]
+        sum_x = sum(hold)
+        p = 0
+        i = SIZE
+        # Main loop
+        while i < n:
+          for j in range(SIZE):
+            cosum[j] += hold[p] * hold[(p + j) % SIZE]
+          x = arr[i]
+          sum_x += x
+          hold[p] = x
+          p = (p + 1) % SIZE
+          i += 1
+        # Flush the circular buffer
+        for _ in range(SIZE):
+          for j in range(SIZE):
+            cosum[j] += hold[p] * hold[(p + j) % SIZE]
+          hold[p] = 0.0
+          p = (p + 1) % SIZE
+        mean = sum_x / n
+        for j in range(SIZE):
+          cosum[j] = (cosum[j] / (n - j)) - (mean * mean)
+        stdev = sqrt(cosum[0])
+        autocorr_1 = cosum[1] / cosum[0] if cosum[0] != 0 else 0.0
+        return autocorr_1, mean, stdev
 
     def run_and_analyze(self, daily_rates=None, n=64*200, batch_count=8,
                     theo_json="theo_values.json",
@@ -262,11 +304,29 @@ class SimulationEngine:
         """Esegue simulazione, analisi batch e calcola tempo medio in coda."""
 
     # 1) Esegui la simulazione
-        self.normale(daily_rates)
+        #self.normale(daily_rates)
 
     # 2) Carica statistiche giornaliere invece di read_stats
         stats_raw = self.load_service_daily_stats(stats_file)
+        print(stats_raw.keys())
 
+
+        for service, metrics in stats_raw.items():
+            for metric, values in metrics.items():
+                if len(values) < 2:
+                    continue
+                try:
+                    k=len(values)
+                    autocorr_1, mean, stdev = self.autocorr_stats(values, k-1)
+                    stats_raw[service][metric]={
+                        "autocorr_1": autocorr_1,
+                        "mean": mean,
+                        "stdev": stdev,
+                        "k": k
+                    }
+                except ValueError as e:
+                    print(f"Servizio: {service}, Metrica: {metric}, Errore nel calcolo dell'autocorrelazione: {e}")
+    
     # ------------------ STAMPA SERVIZIO PER SERVIZIO ------------------
         print("\n=== Statistiche giornaliere dei servizi ===")
         for service, metrics in stats_raw.items():
@@ -280,7 +340,7 @@ class SimulationEngine:
         for service_name, service_data in stats_raw.items():
             queue_vals = service_data.get("queue_time", [])
             exec_vals = service_data.get("execution_time", [])
-
+            resp_vals = service_data.get("response_time", [])
         # Queue time
             if queue_vals:
                 stats[f"{service_name}:queue_time"] = queue_vals
@@ -290,9 +350,9 @@ class SimulationEngine:
                 stats[f"{service_name}:service_time"] = exec_vals
 
         # Response time (queue + service)
-            if queue_vals and exec_vals:
-                min_len = min(len(queue_vals), len(exec_vals))
-                resp_vals = [queue_vals[i] + exec_vals[i] for i in range(min_len)]
+            if resp_vals:
+                
+                resp_vals = resp_vals
                 stats[f"{service_name}:response_time"] = resp_vals
 
     # 4) Carica valori teorici
@@ -308,18 +368,15 @@ class SimulationEngine:
                 key = f"{service}:{metric}"
 
                 if key in stats:
+                    print(f"Elaboro {key}..."   , stats[key])
                     values = stats[key]
-                    batch_means = computeBatchMeans(values, batch_count)
-                    k_eff = len(batch_means)
-                    if k_eff < 2:
-                        mean_sim = None
-                        ci = (None, None)
-                    else:
-                        mean_sim = sum(batch_means) / k_eff
-                        var_sim = sum((x - mean_sim) ** 2 for x in batch_means) / (k_eff - 1)
-                        se = sqrt(var_sim / k_eff)
-                        tcrit = getStudent(k_eff)
-                        ci = (mean_sim - tcrit * se, mean_sim + tcrit * se)
+                    k_eff = stats[key]["k"]
+                 
+                    mean_sim = stats[key]["mean"]
+                    var_sim = stats[key]["stdev"] ** 2 * k_eff  # varianza della media
+                    se = sqrt(var_sim / k_eff)
+                    tcrit = getStudent(k_eff)
+                    ci = (mean_sim - tcrit * se, mean_sim + tcrit * se)
                 else:
                     mean_sim = None
                     ci = (None, None)
@@ -335,11 +392,7 @@ class SimulationEngine:
                     "✅" if check else "❌"
                 ])
 
-    # 6) Tempo medio in coda InValutazione
-        avg_time_in_queue = self.average_queue_time(self.inValutazione)
-        print(f"\n⏱ Tempo medio in coda InValutazione: {avg_time_in_queue:.2f} secondi"
-              if avg_time_in_queue else "Nessun dato coda")
-
+ 
     # 7) Stampa tabellare finale
         print("\n=== Confronto simulazione vs valori teorici ===")
         services = {}

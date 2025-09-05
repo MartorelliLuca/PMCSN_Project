@@ -36,7 +36,7 @@ class InValutazioneCodaPrioritaNP(SimBlockInterface):
         self.instradamento = None
         self.end=None
         self.lower_bound=mean*0.01
-        self.upper_bound=mean*6
+        self.upper_bound=mean*8
         self.a,self.k = find_best_normalized_pareto_params(
             original_mean=mean,
             original_l=self.lower_bound,
