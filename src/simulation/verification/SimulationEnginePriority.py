@@ -82,7 +82,7 @@ class SimulationEngine:
         return [float(day["lambda_per_sec"]) for day in days if "lambda_per_sec" in day]
 
     def buildBlocks(self):
-        cfg_path = self._get_conf_path("inputVerf.json")
+        cfg_path = self._get_conf_path("inputVerif2.json")
         if not cfg_path.exists():
             raise FileNotFoundError(f"Config non trovata: {cfg_path}")
 
@@ -169,35 +169,34 @@ class SimulationEngine:
     
     def load_service_daily_stats(self, filename="transient_analysis_json/daily_stats.json"):
         service_stats = {}
-    
+
         with open(filename, 'r') as f:
             for line in f:
                 line = line.strip()
                 if not line:
                     continue
-                
-                data = json.loads(line)
             
+                data = json.loads(line)
+        
             # Skip metadata lines
                 if data.get('type') != 'daily_summary':
                     continue
-                
-                stats = data.get('stats', {})
             
+                stats = data.get('stats', {})
+        
                 for service_name, service_data in stats.items():
-                
+            
                     if service_name == 'InValutazione':
                     # Handle priority queues in InValutazione
                         visited = service_data.get('visited', {})
                         queue_time = service_data.get('queue_time', {})
                         execution_time = service_data.get('executing_time', {})
-                    
+                
                         if isinstance(visited, dict):
-                        # Multiple priority queues
-                            for priority, visit_count in visited.items():
+                        # Multiple priority queues: Diretta, Pesante, Leggera
+                            for priority in visited.keys():
                                 full_service_name = f"InValutazione_{priority}"
-                            
-                            # Initialize if not exists
+                        
                                 if full_service_name not in service_stats:
                                     service_stats[full_service_name] = {
                                         'visited': [],
@@ -205,19 +204,14 @@ class SimulationEngine:
                                         'execution_time': [],
                                         'response_time': []
                                     }
-                            
-                            # Add daily values
-                                service_stats[full_service_name]['visited'].append(visit_count)
-                                service_stats[full_service_name]['queue_time'].append(
-                                    queue_time.get(priority, 0.0)
-                                )
-                                service_stats[full_service_name]['execution_time'].append(
-                                    execution_time.get(priority, 0.0)
-                                )
+                        
+                                service_stats[full_service_name]['visited'].append(visited.get(priority, 0))
+                                service_stats[full_service_name]['queue_time'].append(queue_time.get(priority, 0.0))
+                                service_stats[full_service_name]['execution_time'].append(execution_time.get(priority, 0.0))
                                 response_time = queue_time.get(priority, 0.0) + execution_time.get(priority, 0.0)
                                 service_stats[full_service_name]['response_time'].append(response_time)
                         else:
-                        # Single queue (fallback for old format)
+                            # Fallback for old single queue format
                             if 'InValutazione' not in service_stats:
                                 service_stats['InValutazione'] = {
                                     'visited': [],
@@ -225,7 +219,6 @@ class SimulationEngine:
                                     'execution_time': [],
                                     'response_time': []
                                 }
-                        
                             service_stats['InValutazione']['visited'].append(visited)
                             service_stats['InValutazione']['queue_time'].append(
                                 service_data.get('queue_time', 0.0)
@@ -236,7 +229,7 @@ class SimulationEngine:
                             response_time = service_data.get('queue_time', 0.0) + service_data.get('executing_time', 0.0)
                             service_stats['InValutazione']['response_time'].append(response_time)
                     else:
-                    # Handle regular services (single queue)
+                    # Regular services (single queue)
                         if service_name not in service_stats:
                             service_stats[service_name] = {
                                 'visited': [],
@@ -244,7 +237,6 @@ class SimulationEngine:
                                 'execution_time': [],
                                 'response_time': []
                             }
-                    
                         service_stats[service_name]['visited'].append(
                             service_data.get('visited', 0)
                         )
@@ -256,6 +248,7 @@ class SimulationEngine:
                         )
                         response_time = service_data.get('queue_time', 0.0) + service_data.get('executing_time', 0.0)
                         service_stats[service_name]['response_time'].append(response_time)
+
         return service_stats
 
 
@@ -299,17 +292,37 @@ class SimulationEngine:
         return autocorr_1, mean, stdev
 
     def run_and_analyze(self, daily_rates=None, n=64*200, batch_count=8,
-                    theo_json="theo_values.json",
+                    theo_json="theo_valuesP.json",
                     stats_file="transient_analysis_json/daily_stats.json"):
         """Esegue simulazione, analisi batch e calcola tempo medio in coda."""
 
     # 1) Esegui la simulazione
-        #self.normale(daily_rates)
+        self.normale(daily_rates)
+
 
     # 2) Carica statistiche giornaliere invece di read_stats
         stats_raw = self.load_service_daily_stats(stats_file)
-        print(stats_raw.keys())
 
+                # 🔹 Calcola la media degli ingressi in coda Diretta
+        if "InValutazione_Diretta" in stats_raw:
+            ingressi_diretti = stats_raw["InValutazione_Diretta"]["visited"]
+            if ingressi_diretti:  # evita divisione per zero
+                media_ingressi_diretti = sum(ingressi_diretti) / len(ingressi_diretti)
+
+                # 🔸 Calcola la durata media di un giorno simulato in secondi
+                theo_path = self._get_conf_path(theo_json)
+                with theo_path.open("r", encoding="utf-8") as f:
+                    theo_values = json.load(f)
+
+                # La simulazione usa date di input (cfg["date"]), prendiamo un giorno = 86400 secondi
+                durata_giornata = 24 * 60 * 60  
+
+                frequenza_diretta = media_ingressi_diretti / durata_giornata
+
+                print(f"\n📊 Media ingressi in coda Diretta: {media_ingressi_diretti:.2f}")
+                print(f"⏱️ Frequenza media ingressi Diretta: {frequenza_diretta:.6f} al secondo")
+            else:
+                print("\n⚠️ Nessun ingresso registrato in coda Diretta.")
 
         for service, metrics in stats_raw.items():
             for metric, values in metrics.items():
@@ -327,13 +340,6 @@ class SimulationEngine:
                 except ValueError as e:
                     print(f"Servizio: {service}, Metrica: {metric}, Errore nel calcolo dell'autocorrelazione: {e}")
     
-    # ------------------ STAMPA SERVIZIO PER SERVIZIO ------------------
-        print("\n=== Statistiche giornaliere dei servizi ===")
-        for service, metrics in stats_raw.items():
-            print(f"\n📌 Servizio: {service}")
-            for metric, values in metrics.items():
-                print(f"   {metric}: {values}")
-    # ------------------------------------------------------------------
 
     # 3) Riformatta stats_raw nel formato { "Service:metric": [valori,...] }
         stats = {}
@@ -361,6 +367,9 @@ class SimulationEngine:
             theo_values = json.load(f)
 
         rows = []
+        # 🔹 Liste per accumulare i tempi di risposta simulati di tutti i servizi
+        response_times_sim = []
+        total_theo = 0.0
 
     # 5) Confronto simulazione vs teorici
         for service, metrics in theo_values.items():
@@ -368,7 +377,7 @@ class SimulationEngine:
                 key = f"{service}:{metric}"
 
                 if key in stats:
-                    print(f"Elaboro {key}..."   , stats[key])
+                    #print(f"Elaboro {key}..."   , stats[key])
                     values = stats[key]
                     k_eff = stats[key]["k"]
                  
@@ -380,6 +389,13 @@ class SimulationEngine:
                 else:
                     mean_sim = None
                     ci = (None, None)
+
+                # 🔹 Accumula solo tempi di risposta
+                if metric == "response_time":
+                    total_theo += theo_val if theo_val is not None else 0.0
+                    if mean_sim is not None:
+                        response_times_sim.append(mean_sim)
+
 
                 check = mean_sim is not None and ci[0] <= theo_val <= ci[1]
 
@@ -408,5 +424,26 @@ class SimulationEngine:
                 headers=["Metrica", "Teorico", "Simulato", "95% CI", "Coerente?"],
                 tablefmt="fancy_grid"
             ))
+        
+        # 🔹 Somma tempi di risposta simulati con batch means per intervallo di confidenza
+        if response_times_sim:
+            # Tratta l'array come "valori batch" per calcolare media, var, CI
+            k_eff = len(response_times_sim)
+            mean_sim_sum = sum(response_times_sim)
+            var_sim_sum = sum((x - mean_sim_sum / k_eff) ** 2 for x in response_times_sim) / (k_eff - 1) if k_eff > 1 else 0
+            se_sum = sqrt(var_sim_sum / k_eff) if k_eff > 1 else 0
+            tcrit = getStudent(k_eff) if k_eff > 1 else 0
+            ci_sum = (mean_sim_sum - tcrit * se_sum, mean_sim_sum + tcrit * se_sum)
+            check_sum = ci_sum[0] <= total_theo <= ci_sum[1]
+        else:
+            mean_sim_sum = ci_sum = (None, None)
+            check_sum = False
+        
+        print("\n=== Somma tempi di risposta (tutti i centri) ===")
+        print(tabulate(
+            [[f"{total_theo:.4f}", f"{mean_sim_sum:.4f}", f"[{ci_sum[0]:.4f}, {ci_sum[1]:.4f}]", "✅" if check_sum else "❌"]],
+            headers=["Tempo Risposta Totale Teorico", "Tempo Risposta Totale Simulata", "95% CI", "Coerente?"],
+            tablefmt="fancy_grid"
+        ))
 
         return rows

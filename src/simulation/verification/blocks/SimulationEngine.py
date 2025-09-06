@@ -157,6 +157,10 @@ class SimulationEngine:
             theo_values = json.load(f)
 
         rows = []
+        # 🔹 Liste per accumulare i tempi di risposta simulati di tutti i servizi
+        response_times_sim = []
+        total_theo = 0.0
+
 
     # Per ogni servizio e metrica presenti nei valori teorici
         for service, metrics in theo_values.items():
@@ -181,6 +185,12 @@ class SimulationEngine:
                 else:
                     mean_sim = None
                     ci = (None, None)
+                
+                # 🔹 Accumula solo tempi di risposta
+                if metric == "response_time":
+                    total_theo += theo_val if theo_val is not None else 0.0
+                    if mean_sim is not None:
+                        response_times_sim.append(mean_sim)
 
             # Check coerenza
                 check = (
@@ -210,6 +220,28 @@ class SimulationEngine:
                 headers=["Metrica", "Teorico", "Simulato", "95% CI", "Coerente?"],
                 tablefmt="fancy_grid"
             ))
+
+        # 🔹 Somma tempi di risposta simulati con batch means per intervallo di confidenza
+        if response_times_sim:
+            # Tratta l'array come "valori batch" per calcolare media, var, CI
+            k_eff = len(response_times_sim)
+            mean_sim_sum = sum(response_times_sim)
+            var_sim_sum = sum((x - mean_sim_sum / k_eff) ** 2 for x in response_times_sim) / (k_eff - 1) if k_eff > 1 else 0
+            se_sum = sqrt(var_sim_sum / k_eff) if k_eff > 1 else 0
+            tcrit = getStudent(k_eff) if k_eff > 1 else 0
+            ci_sum = (mean_sim_sum - tcrit * se_sum, mean_sim_sum + tcrit * se_sum)
+            check_sum = ci_sum[0] <= total_theo <= ci_sum[1]
+        else:
+            mean_sim_sum = ci_sum = (None, None)
+            check_sum = False
+        
+        print("\n=== Somma tempi di risposta (tutti i centri) ===")
+        print(tabulate(
+            [[f"{total_theo:.4f}", f"{mean_sim_sum:.4f}", f"[{ci_sum[0]:.4f}, {ci_sum[1]:.4f}]", "✅" if check_sum else "❌"]],
+            headers=["Tempo Risposta Totale Teorico", "Tempo Risposta Totale Simulata", "95% CI", "Coerente?"],
+            tablefmt="fancy_grid"
+        ))
+
         print("\n")  # Riga vuota extra per leggibilità
 
         return rows

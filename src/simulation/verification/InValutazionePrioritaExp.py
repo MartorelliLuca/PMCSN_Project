@@ -32,6 +32,8 @@ class InValutazioneCodaPrioritaNP(SimBlockInterface):
         self.instradamento = None
         self.end = None
 
+        
+
 
     def setInstradamento(self, instradamento: SimBlockInterface):
         """Imposta il blocco di instradamento."""
@@ -81,9 +83,9 @@ class InValutazioneCodaPrioritaNP(SimBlockInterface):
         queueName = ""    
 
         if comingFrom == "InvioDiretto":
-            queueName = "Diretta"            
+            queueName = "Diretta"
         else:
-            if execTime.total_seconds() > (self.mean * 1.5):
+            if execTime.total_seconds() > (self.mean * 1.5):                
                 queueName = "Pesante"
             else:
                 queueName = "Leggera"

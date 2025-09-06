@@ -80,7 +80,7 @@ def main():
             daily_rates=daily_rates,
             n=64*100,
             batch_count=64,
-            theo_json="theo_values.json"
+            theo_json="theo_valuesP.json"
         )
 
 
