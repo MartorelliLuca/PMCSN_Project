@@ -11,7 +11,6 @@ def load_priority_stats_data(filename):
     with open(filename, 'r') as f:
         lines = [line for line in f if line.strip()]
         # Remove last 40 lines for transient analysis if file is long enough
-        lines = lines[:-40] if len(lines) > 40 else []
         for line in lines:
             data.append(json.loads(line))
     return data
@@ -156,8 +155,7 @@ def plot_priority_response_times(queue_name, queue_times, exec_times, output_dir
         response_times = [q + e for q, e in zip(q_times, e_times)]
         moving_avg = pd.Series(response_times).rolling(window=min(100, len(response_times)//10), min_periods=1).mean()
         
-        seed = replica_seeds.get(label, "N/A")
-        ax.plot(moving_avg, label=f"{label} (seed={seed})", linewidth=1.2, alpha=0.8)
+        ax.plot(moving_avg, linewidth=1.2, alpha=0.7)  # Remove replica labels
         all_vals.extend(response_times)
     
     if all_vals:
@@ -165,13 +163,13 @@ def plot_priority_response_times(queue_name, queue_times, exec_times, output_dir
         last_vals = all_vals[-15000:] if len(all_vals) > 15000 else all_vals
         mean_val = np.mean(last_vals)
         ax.axhline(mean_val, color='red', linestyle='--', 
-                  label=f"Mean (ultimi {min(15000, len(all_vals))}): {mean_val:.2f}", linewidth=2)
+                  label=f"Mean: {mean_val:.2f}", linewidth=2)
     
     apply_priority_log_scale(ax, all_vals, queue_name)
     ax.grid(True, alpha=0.3)
-    sort_legend(ax)
+    ax.legend()  # Only shows mean now
     plt.tight_layout()
-    plt.savefig(f"{output_dir}/tempi_risposta_{queue_name.lower().replace('_', '_')}.png", dpi=300)
+    plt.savefig(f"{output_dir}/tempi_risposta_{queue_name.lower().replace('_', '_')}.jpg", dpi=150, bbox_inches='tight')
     plt.close()
 
 def plot_priority_visits(queue_name, visits_data, output_dir, replica_seeds):
@@ -205,53 +203,146 @@ def plot_priority_queue_comprehensive(queue_name, queue_data, output_dir, replic
     axes[0].set_xlabel("Evento #")
     axes[0].set_ylabel("Tempo di Attesa (s)")
     
+    queue_all_vals = []
     for label in sorted(queue_data.keys()):
         q_times = queue_data[label]['queue_times']
         if len(q_times) < 10:
             continue
         moving_avg = pd.Series(q_times).rolling(window=max(10, len(q_times)//50), min_periods=1).mean()
-        seed = replica_seeds.get(label, "N/A")
-        axes[0].plot(moving_avg, label=f"{label} (seed={seed})", linewidth=1.0, alpha=0.8)
+        axes[0].plot(moving_avg, linewidth=1.0, alpha=0.7)  # Remove replica labels
+        queue_all_vals.extend(q_times)
+    
+    if queue_all_vals:
+        mean_queue = np.mean(queue_all_vals)
+        axes[0].axhline(mean_queue, color='red', linestyle='--', label=f"Mean: {mean_queue:.2f}", linewidth=1)
     
     axes[0].grid(True, alpha=0.3)
-    axes[0].legend()
+    axes[0].legend()  # Only shows mean
     
     # Execution Times
     axes[1].set_title("Tempi di Esecuzione")
     axes[1].set_xlabel("Evento #")
     axes[1].set_ylabel("Tempo di Esecuzione (s)")
     
+    exec_all_vals = []
     for label in sorted(queue_data.keys()):
         e_times = queue_data[label]['execution_times']
         if len(e_times) < 10:
             continue
         moving_avg = pd.Series(e_times).rolling(window=max(10, len(e_times)//50), min_periods=1).mean()
-        seed = replica_seeds.get(label, "N/A")
-        axes[1].plot(moving_avg, label=f"{label} (seed={seed})", linewidth=1.0, alpha=0.8)
+        axes[1].plot(moving_avg, linewidth=1.0, alpha=0.7)  # Remove replica labels
+        exec_all_vals.extend(e_times)
+    
+    if exec_all_vals:
+        mean_exec = np.mean(exec_all_vals)
+        axes[1].axhline(mean_exec, color='red', linestyle='--', label=f"Mean: {mean_exec:.2f}", linewidth=1)
     
     axes[1].grid(True, alpha=0.3)
-    axes[1].legend()
+    axes[1].legend()  # Only shows mean
     
     # Response Times
     axes[2].set_title("Tempi di Risposta Totali")
     axes[2].set_xlabel("Evento #")
     axes[2].set_ylabel("Tempo di Risposta (s)")
     
+    resp_all_vals = []
     for label in sorted(queue_data.keys()):
         r_times = queue_data[label]['response_times']
         if len(r_times) < 10:
             continue
         moving_avg = pd.Series(r_times).rolling(window=max(10, len(r_times)//50), min_periods=1).mean()
-        seed = replica_seeds.get(label, "N/A")
-        axes[2].plot(moving_avg, label=f"{label} (seed={seed})", linewidth=1.0, alpha=0.8)
+        axes[2].plot(moving_avg, linewidth=1.0, alpha=0.7)  # Remove replica labels
+        resp_all_vals.extend(r_times)
     
-    apply_priority_log_scale(axes[2], [v for data in queue_data.values() for v in data['response_times']], queue_name)
+    if resp_all_vals:
+        mean_resp = np.mean(resp_all_vals)
+        axes[2].axhline(mean_resp, color='red', linestyle='--', label=f"Mean: {mean_resp:.2f}", linewidth=1)
+    
+    apply_priority_log_scale(axes[2], resp_all_vals, queue_name)
     axes[2].grid(True, alpha=0.3)
-    axes[2].legend()
+    axes[2].legend()  # Only shows mean
     
     plt.tight_layout()
-    plt.savefig(f"{output_dir}/completa_{queue_name.lower().replace('_', '_')}.png", dpi=300, bbox_inches='tight')
+    plt.savefig(f"{output_dir}/completa_{queue_name.lower().replace('_', '_')}.jpg", dpi=150, bbox_inches='tight')
     plt.close()
+
+def plot_invalutazione_weighted_daily_means(all_queue_data, output_dir):
+    """Plot InValutazione using weighted daily means combining all sub-queues."""
+    fig, ax = plt.subplots(figsize=(14, 8))
+    ax.set_title("InValutazione - Tempi Medi Giornalieri (pesati per visite - tutte le code)")
+    ax.set_xlabel("Giorno")
+    ax.set_ylabel("Tempo Medio Pesato (s)")
+    
+    # Find all InValutazione queues (main + sub-queues)
+    invalutazione_queues = {}
+    for queue_name, queue_replicas in all_queue_data.items():
+        if "InValutazione" in queue_name:
+            invalutazione_queues[queue_name] = queue_replicas
+    
+    if not invalutazione_queues:
+        print("No InValutazione queues found")
+        return
+    
+    all_daily_weighted = []
+    
+    # Process each replica
+    for replica_idx in range(len(list(invalutazione_queues.values())[0].keys())):
+        replica_files = list(list(invalutazione_queues.values())[0].keys())
+        if replica_idx >= len(replica_files):
+            continue
+            
+        replica_file = replica_files[replica_idx]
+        
+        # Get the maximum number of days across all queues for this replica
+        max_days = 0
+        for queue_name, queue_replicas in invalutazione_queues.items():
+            if replica_file in queue_replicas:
+                replica_data = queue_replicas[replica_file]
+                max_days = max(max_days, len(replica_data.get('visits', [])))
+        
+        # Calculate weighted daily means for this replica
+        daily_weighted = []
+        for day in range(max_days):
+            day_weighted_sum = 0
+            day_total_visits = 0
+            
+            # Sum across all InValutazione queues for this day
+            for queue_name, queue_replicas in invalutazione_queues.items():
+                if replica_file in queue_replicas:
+                    replica_data = queue_replicas[replica_file]
+                    
+                    if (day < len(replica_data.get('queue_times', [])) and 
+                        day < len(replica_data.get('visits', []))):
+                        
+                        queue_time = replica_data['queue_times'][day]
+                        visits = replica_data['visits'][day]
+                        
+                        if visits > 0:
+                            day_weighted_sum += queue_time * visits
+                            day_total_visits += visits
+            
+            # Calculate weighted average for this day
+            if day_total_visits > 0:
+                weighted_avg = day_weighted_sum / day_total_visits
+                daily_weighted.append(weighted_avg)
+            else:
+                daily_weighted.append(0)
+        
+        if daily_weighted:
+            ax.plot(daily_weighted, linewidth=1.2, alpha=0.7)
+            all_daily_weighted.extend(daily_weighted)
+    
+    if all_daily_weighted:
+        mean_val = np.mean(all_daily_weighted)
+        ax.axhline(mean_val, color='red', linestyle='--', 
+                  label=f"Mean: {mean_val:.2f}", linewidth=2)
+    
+    ax.grid(True, alpha=0.3)
+    ax.legend()
+    plt.tight_layout()
+    plt.savefig(f"{output_dir}/weighted_daily_invalutazione.jpg", dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"✅ Created weighted daily InValutazione graph with {len(all_daily_weighted)} data points")
 
 def create_priority_summary_report(all_data, output_dir):
     """Create a summary report for all priority queues."""
@@ -324,6 +415,7 @@ def analyze_priority_queue_directory(transient_dir="transient_analysis_json", ou
     os.makedirs(output_dir, exist_ok=True)
 
     # Generate plots for each queue
+    invalutazione_processed = False
     for queue_name in all_queue_data:
         print(f"\n🔍 Analisi per la coda: {queue_name}")
         
@@ -332,21 +424,16 @@ def analyze_priority_queue_directory(transient_dir="transient_analysis_json", ou
                                  for replica, data in all_queue_data[queue_name].items()}
         exec_times_by_replica = {replica: data['execution_times'] 
                                for replica, data in all_queue_data[queue_name].items()}
-        visits_by_replica = {replica: data['visits'] 
-                           for replica, data in all_queue_data[queue_name].items()}
         
-        # Generate different types of plots
-        if queue_times_by_replica and any(queue_times_by_replica.values()):
-            plot_priority_queue_comparison(queue_name, queue_times_by_replica, output_dir, REPLICA_SEEDS)
-        
+        # Generate plots (removed confronto and visits)
         if (queue_times_by_replica and exec_times_by_replica and 
             any(queue_times_by_replica.values()) and any(exec_times_by_replica.values())):
             plot_priority_response_times(queue_name, queue_times_by_replica, exec_times_by_replica, output_dir, REPLICA_SEEDS)
         
-        if visits_by_replica and any(visits_by_replica.values()):
-            plot_priority_visits(queue_name, visits_by_replica, output_dir, REPLICA_SEEDS)
-        
         plot_priority_queue_comprehensive(queue_name, all_queue_data[queue_name], output_dir, REPLICA_SEEDS)
+    
+    # Create single weighted graph for all InValutazione queues
+    plot_invalutazione_weighted_daily_means(all_queue_data, output_dir)
 
     # Create summary report
     summary_data = {}
@@ -371,10 +458,9 @@ def analyze_priority_queue_directory(transient_dir="transient_analysis_json", ou
     print(f"📂 File generati:")
     for queue_name in all_queue_data:
         safe_name = queue_name.lower().replace('_', '_')
-        print(f"   - confronto_{safe_name}.png")
-        print(f"   - tempi_risposta_{safe_name}.png")
-        print(f"   - visite_{safe_name}.png")
-        print(f"   - completa_{safe_name}.png")
+        print(f"   - tempi_risposta_{safe_name}.jpg")
+        print(f"   - completa_{safe_name}.jpg")
+    print(f"   - weighted_daily_invalutazione.jpg  (combined all InValutazione queues)")
     print(f"   - priority_analysis_summary.txt")
 
 if __name__ == "__main__":
