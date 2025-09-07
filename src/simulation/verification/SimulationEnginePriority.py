@@ -303,26 +303,43 @@ class SimulationEngine:
     # 2) Carica statistiche giornaliere invece di read_stats
         stats_raw = self.load_service_daily_stats(stats_file)
 
-                # 🔹 Calcola la media degli ingressi in coda Diretta
-        if "InValutazione_Diretta" in stats_raw:
-            ingressi_diretti = stats_raw["InValutazione_Diretta"]["visited"]
-            if ingressi_diretti:  # evita divisione per zero
-                media_ingressi_diretti = sum(ingressi_diretti) / len(ingressi_diretti)
+         # 🔹 Calcola la frequenza media di ingressi (λ) per le priorità di InValutazione
+        priority_keys = ["Diretta", "Pesante", "Leggera"]
+        theo_path = self._get_conf_path(theo_json)
+        with theo_path.open("r", encoding="utf-8") as f:
+            theo_values = json.load(f)
 
-                # 🔸 Calcola la durata media di un giorno simulato in secondi
-                theo_path = self._get_conf_path(theo_json)
-                with theo_path.open("r", encoding="utf-8") as f:
-                    theo_values = json.load(f)
+        durata_giornata = 24 * 60 * 60
 
-                # La simulazione usa date di input (cfg["date"]), prendiamo un giorno = 86400 secondi
-                durata_giornata = 24 * 60 * 60  
+    # Dizionari per salvare i valori di media ingressi
+        media_ingressi_dict = {}
+        frequenze_dict = {}
 
-                frequenza_diretta = media_ingressi_diretti / durata_giornata
+        for pk in priority_keys:
+            full_key = f"InValutazione_{pk}"
+            if full_key in stats_raw:
+                ingressi = stats_raw[full_key].get("visited", [])
+                if ingressi:
+                    media_ingressi = sum(ingressi) / len(ingressi)
+                    frequenza = media_ingressi / durata_giornata
+                    media_ingressi_dict[pk] = media_ingressi
+                    frequenze_dict[pk] = frequenza
 
-                print(f"\n📊 Media ingressi in coda Diretta: {media_ingressi_diretti:.2f}")
-                print(f"⏱️ Frequenza media ingressi Diretta: {frequenza_diretta:.6f} al secondo")
+                    print(f"\n📊 Media ingressi in coda {pk}: {media_ingressi:.2f}")
+                    print(f"⏱️ Frequenza media ingressi {pk}: {frequenza:.6f} al secondo")
+                else:
+                    print(f"\n⚠️ Nessun ingresso registrato in coda {pk}.")
             else:
-                print("\n⚠️ Nessun ingresso registrato in coda Diretta.")
+                print(f"\nℹ️ Statistiche per InValutazione_{pk} non trovate nei daily stats.")
+
+    # 🔹 Somma fra Pesante e Leggera
+        if "Pesante" in media_ingressi_dict and "Leggera" in media_ingressi_dict:
+            somma_ingressi = media_ingressi_dict["Pesante"] + media_ingressi_dict["Leggera"]
+            somma_frequenza = frequenze_dict["Pesante"] + frequenze_dict["Leggera"]
+
+            print(f"\n📊 Somma ingressi (Pesante + Leggera): {somma_ingressi:.2f}")
+            print(f"⏱️ Frequenza media ingressi (Pesante + Leggera): {somma_frequenza:.6f} al secondo")
+
 
         for service, metrics in stats_raw.items():
             for metric, values in metrics.items():
