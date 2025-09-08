@@ -1,12 +1,7 @@
-gammaArrival=0.184992
-
-giorniDiarrivi=143
-giorniAfterArrivi=20
+gammaArrival=0.15
 
 
-giorniTotali=giorniDiarrivi+giorniAfterArrivi
 
-gammaArrival=gammaArrival*(giorniDiarrivi/giorniTotali)
 print(gammaArrival)
 pa=0.96 # probabilita del successo della richiesta
 pf=0.04 # probabilita di fallimento del login
@@ -17,6 +12,9 @@ pd=0.22 # probabilita di richiesta diretta
 pc=1-pd
 
 
+
+def getExponentialToeoreticalWaitTime(ro: float,serviceTIme) -> float:
+        return (ro*serviceTIme)/((1-ro)*2)
 
 from sympy import *
 from sympy.solvers.solveset import linsolve
@@ -31,20 +29,12 @@ equation5 = Eq(lambda5, lambda3*(1-pn) + lambda4)
 
 
 
-
-
-
 output = solve([equation1,equation2,equation3,equation4,equation5],dict=True)
 
+lambda1=output[0][lambda1]
+lambda2=output[0][lambda2]   
+lambda3=output[0][lambda3]
+lambda4=output[0][lambda4]
 lambda5=output[0][lambda5]
 
-dipendenti=200
-pratiche=70
-totale=dipendenti*pratiche
 
-lambdaPerPerson=lambda5/totale
-
-print((1/lambdaPerPerson)/(60*60))
-print(1/lambdaPerPerson)
-
-print(output)
