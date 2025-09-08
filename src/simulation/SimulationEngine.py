@@ -24,7 +24,7 @@ class SimulationEngine:
     def getArrivalsEqualsRates(self) -> list[float]:
         """Crea un array costante di arrivi per l’analisi del transitorio o per un mese specifico."""
         month = "max"
-        if month:
+        if False:
             conf_path = Path(__file__).resolve().parents[2] / "conf" / "months_arrival_rate.json"
             if not conf_path.exists():
                 raise FileNotFoundError(f"File non trovato: {conf_path}")
@@ -54,10 +54,10 @@ class SimulationEngine:
         """
 
         seeds_path = Path(__file__).resolve().parents[2] / "used_seeds.txt"
+        rngs.plantSeeds(seed_base)
 
         for rep in range(n_replicas):
             print(f"\n--- Avvio replica {rep+1}/{n_replicas} ---")
-            rngs.plantSeeds(1)
 
             # Costruisci i blocchi con replica_id
             self.event_queue = EventQueue()
@@ -79,7 +79,8 @@ class SimulationEngine:
             startingBlock.start_timestamp = start_date
             startingBlock.current_time = start_date
             startingBlock.end_timestamp = end_date
-
+            with seeds_path.open("a", encoding="utf-8") as f:
+                            f.write(f"Replica {rep+1}: seed = {seed_base}\n")
             # Avvio simulazione
             self.event_queue.push(startingBlock.start())
             while not self.event_queue.is_empty():
@@ -90,12 +91,6 @@ class SimulationEngine:
                     eventdate=event.timestamp
                     if eventdate > finishAccumulationDate and accumulating:
                         print(f"--- Fine accumulo, inizio raccolta dati il {eventdate} ---")
-                        rngs.plantSeeds(seed_base)
-                        
-                        # Scrivi il seed usato su file
-                        with seeds_path.open("a", encoding="utf-8") as f:
-                            f.write(f"Replica {rep+1}: seed = {seed_base}\n")
-
                         endBlock.setWorkingStatus(True)
                         accumulating = False    
                         startingBlock.setDailyRates(daily_rates)
@@ -109,7 +104,7 @@ class SimulationEngine:
             endBlock.finalize()
             print(f"✅ Replica {rep+1} completata! ({start_date.date()} → {end_date.date()})")
             
-            seed_base = rngs.getSeed()
+            seed_base = rngs.getSeed() #just to print it on file
 
 
     def getArrivalsRates(self) -> list[float]:
@@ -294,10 +289,10 @@ class SimulationEngine:
         Ogni replica avanza di un anno rispetto alla precedente.
         """
         seeds_path = Path(__file__).resolve().parents[2] / "used_seeds.txt"
+        rngs.plantSeeds(seed_base)
 
         for rep in range(n_replicas):
             print(f"\n--- Avvio replica {rep+1}/{n_replicas} ---")
-            rngs.plantSeeds(seed_base)
 
             # Scrivi il seed usato su file
             with seeds_path.open("a", encoding="utf-8") as f:
@@ -334,5 +329,4 @@ class SimulationEngine:
             endBlock.finalize()
             print(f"✅ Replica {rep+1} completata! ({start_date.date()} → {end_date.date()})")
 
-            # Aggiorna il seed per la prossima replica
-            seed_base = rngs.getSeed()
+            seed_base = rngs.getSeed() #just for printing

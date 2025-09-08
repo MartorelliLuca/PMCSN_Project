@@ -23,8 +23,8 @@ class SimulationEngine:
 
     def getArrivalsEqualsRates(self) -> list[float]:
         """Crea un array costante di arrivi per l'analisi del transitorio o per un mese specifico."""
-        month = "max"
-        if month:
+        month = "mean_arrival_rate"
+        if False: # change if you want to test monthly rates
             conf_path = Path(__file__).resolve().parents[2] / "conf" / "months_arrival_rate.json"
             if not conf_path.exists():
                 raise FileNotFoundError(f"File non trovato: {conf_path}")
@@ -41,7 +41,8 @@ class SimulationEngine:
             with conf_path.open("r", encoding="utf-8") as f:
                 data = json.load(f)
             rate = float(data["arrival_rate"])
-        return [rate] * 732
+        return [rate] * 1000
+    
     
 
     def getAccumulationArrivals(self) -> list[float]:
@@ -52,10 +53,10 @@ class SimulationEngine:
         Metodo delle replicazioni per analisi del transitorio.
         Ogni replica avanza di un anno rispetto alla precedente.
         """
+        rngs.plantSeeds(seed_base)
 
         for rep in range(n_replicas):
             print(f"\n--- Avvio replica {rep+1}/{n_replicas} ---")
-            rngs.plantSeeds(1)
 
             # Costruisci i blocchi con replica_id
             self.event_queue = EventQueue()
@@ -88,7 +89,6 @@ class SimulationEngine:
                     eventdate=event.timestamp
                     if eventdate > finishAccumulationDate and accumulating:
                         print(f"--- Fine accumulo, inizio raccolta dati il {eventdate} ---")
-                        rngs.plantSeeds(seed_base)
                         endBlock.setWorkingStatus(True)
                         accumulating = False    
                         startingBlock.setDailyRates(daily_rates)
@@ -102,7 +102,6 @@ class SimulationEngine:
             endBlock.finalize()
             print(f"✅ Replica {rep+1} completata! ({start_date.date()} → {end_date.date()})")
             
-            seed_base = rngs.getSeed()
 
 
 
