@@ -1,7 +1,7 @@
 import sys
 from simulation.SimulationEngine import SimulationEngine as BaseEngine
 from simulation.SimulationEngineMigliorativa import SimulationEngine as MigliorativoEngine
-from simulation.verification.blocks.SimulationEngine import SimulationEngine as ExponentialEngine 
+from simulation.verification.base.SimulationEngine import SimulationEngine as ExponentialEngine 
 from simulation.verification.SimulationEnginePriority import SimulationEngine as PriorityEngine
 
 

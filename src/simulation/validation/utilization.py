@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 # --- Configurazione centri (da input.json) ---
 centers_config = {
-    "inValutazione": {"serversNumber": 200, "mean": 66250.3},
+    "inValutazione": {"serversNumber":1, "mean": 3.9447},
     "compilazionePrecompilata": {"serversNumber": 8, "mean": 30},
     "invioDiretto": {"serversNumber": 1, "mean": 3},
     "instradamento": {"serversNumber": 3, "mean": 0.3333},

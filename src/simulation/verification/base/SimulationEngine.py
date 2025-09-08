@@ -6,9 +6,9 @@ from datetime import datetime, timedelta
 
 from simulation.blocks.EndBlock import EndBlock
 from simulation.blocks.StartBlock import StartBlock
-from simulation.verification.blocks.InvioDirettoExp import InvioDiretto
-from simulation.verification.blocks.CompilazionePrecompilataExp import CompilazionePrecompilataExponential
-from simulation.verification.blocks.InValutazioneExp import InValutazioneExponential
+from simulation.verification.base.InvioDirettoExp import InvioDiretto
+from simulation.verification.base.CompilazionePrecompilataExp import CompilazionePrecompilataExponential
+from simulation.verification.base.InValutazioneExp import InValutazioneExponential
 from simulation.blocks.Autenticazione import Autenticazione
 from simulation.blocks.Instradamento import Instradamento
 

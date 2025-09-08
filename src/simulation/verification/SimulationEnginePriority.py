@@ -6,8 +6,8 @@ from datetime import datetime, timedelta
 
 from simulation.blocks.EndBlock import EndBlock
 from simulation.blocks.StartBlock import StartBlock
-from simulation.verification.blocks.InvioDirettoExp import InvioDiretto
-from simulation.verification.blocks.CompilazionePrecompilataExp import CompilazionePrecompilataExponential
+from simulation.verification.base.InvioDirettoExp import InvioDiretto
+from simulation.verification.base.CompilazionePrecompilataExp import CompilazionePrecompilataExponential
 from simulation.verification.InValutazionePrioritaExp import InValutazioneCodaPrioritaNP
 from simulation.blocks.Autenticazione import Autenticazione
 from simulation.blocks.Instradamento import Instradamento
@@ -291,7 +291,7 @@ class SimulationEngine:
         autocorr_1 = cosum[1] / cosum[0] if cosum[0] != 0 else 0.0
         return autocorr_1, mean, stdev
 
-    def run_and_analyze(self, daily_rates=None, n=64*200, batch_count=8,
+    def run_and_analyze(self, daily_rates=None, n=64*200, batch_count=128,
                     theo_json="theo_valuesP.json",
                     stats_file="transient_analysis_json/daily_stats.json"):
         """Esegue simulazione, analisi batch e calcola tempo medio in coda."""
