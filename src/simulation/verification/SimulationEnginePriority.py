@@ -18,7 +18,7 @@ from pathlib import Path
 from tabulate import tabulate
 from math import sqrt
 
-from batchMean import read_stats, computeBatchMeans, computeBatchStdev, getStudent
+from src.batchMean import read_stats, computeBatchMeans, computeBatchStdev, getStudent
 
 
 
