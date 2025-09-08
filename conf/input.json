@@ -1,7 +1,7 @@
 {
   "inValutazione": {
     "name": "InValutazione",
-    "dipendenti": 200,
+    "dipendenti": 160,
     "pratichePerDipendente": 70,
     "mean": 66250.30,
     "variance": 30,
