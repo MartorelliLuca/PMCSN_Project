@@ -129,7 +129,6 @@ class SimulationEngine:
     }
 
     _FIELD_ALIASES = {
-        "instradamento": {"queueMaxLength": "queueMaxLenght"}
     }
 
     def _normalize_section(self, data: dict, section_name: str) -> dict:
@@ -165,8 +164,6 @@ class SimulationEngine:
         inValutazione            = self._instantiate(cfg, "inValutazione")
         compilazionePrecompilata = self._instantiate(cfg, "compilazionePrecompilata")
         invioDiretto             = self._instantiate(cfg, "invioDiretto")
-        instradamento            = self._instantiate(cfg, "instradamento")
-        autenticazione           = self._instantiate(cfg, "autenticazione")
 
         start_date = datetime.fromisoformat(cfg["date"]["start"])
         end_date   = datetime.fromisoformat(cfg["date"]["end"]) + timedelta(days=1)
@@ -178,19 +175,14 @@ class SimulationEngine:
         )
 
         # Wiring
-        startingBlock.setNextBlock(instradamento)
-        instradamento.setQueueFullFallBackBlock(endBlock)
-        inValutazione.setInstradamento(instradamento)
-        autenticazione.setInstradamento(instradamento)
-        autenticazione.setCompilazione(compilazionePrecompilata)
-        autenticazione.setInvioDiretto(invioDiretto)
+        startingBlock.setNextBlock(compilazionePrecompilata)
+        inValutazione.setInstradamento(compilazionePrecompilata) #TODO: in input e nelle richieste che rientrano da in valutazione ce da dividere il traffico per precompilata e invio diretto( si potrebbe mettere un blocco che fa lo splitting del traffico ma che non fa nient altro)
         compilazionePrecompilata.setNextBlock(inValutazione)
         invioDiretto.setNextBlock(inValutazione)
         inValutazione.setEnd(endBlock)
-        instradamento.setNextBlock(autenticazione)
         endBlock.setStartBlock(startingBlock)
 
-        return startingBlock, instradamento, autenticazione, compilazionePrecompilata, invioDiretto, inValutazione, endBlock
+        return startingBlock, compilazionePrecompilata, invioDiretto, inValutazione, endBlock
 
 
     def buildBlocksSingleIteration(self):
@@ -206,8 +198,6 @@ class SimulationEngine:
         inValutazione            = self._instantiate(cfg, "inValutazione")
         compilazionePrecompilata = self._instantiate(cfg, "compilazionePrecompilata")
         invioDiretto             = self._instantiate(cfg, "invioDiretto")
-        instradamento            = self._instantiate(cfg, "instradamento")
-        autenticazione           = self._instantiate(cfg, "autenticazione")
 
         start_date = datetime.fromisoformat(cfg["date"]["start"])
         end_date   = datetime.fromisoformat(cfg["date"]["end"]) + timedelta(days=1)
@@ -219,32 +209,28 @@ class SimulationEngine:
         )
 
         # Wiring
-        startingBlock.setNextBlock(instradamento)
-        instradamento.setQueueFullFallBackBlock(endBlock)
-        inValutazione.setInstradamento(instradamento)
-        autenticazione.setInstradamento(instradamento)
-        autenticazione.setCompilazione(compilazionePrecompilata)
-        autenticazione.setInvioDiretto(invioDiretto)
+        startingBlock.setNextBlock(compilazionePrecompilata)
+        #LE RICHIESTE CHE ESCONO DA IN VALUTAZIONE VANNO REINSERITE IN PRECOMPILATA/INVIO DIRETTO
+        inValutazione.setInstradamento(compilazionePrecompilata)
         compilazionePrecompilata.setNextBlock(inValutazione)
         invioDiretto.setNextBlock(inValutazione)
         inValutazione.setEnd(endBlock)
-        instradamento.setNextBlock(autenticazione)
         endBlock.setStartBlock(startingBlock)
 
-        return startingBlock, instradamento, autenticazione, compilazionePrecompilata, invioDiretto, inValutazione, endBlock
+        return startingBlock, compilazionePrecompilata, invioDiretto, inValutazione, endBlock
 
     def normale_single_iteration(self, daily_rates):
         """Avvia la simulazione con i tassi di arrivo specificati."""
         rngs.plantSeeds(1)
         self.event_queue = EventQueue()
 
-        startingBlock, instradamento, autenticazione, compilazionePrecompilata, invioDiretto, inValutazione, endBlock = self.buildBlocksSingleIteration()
+        startingBlock, compilazionePrecompilata, invioDiretto, inValutazione, endBlock = self.buildBlocksSingleIteration()
 
         if daily_rates is None:
             daily_rates = self.getArrivalsRates()
 
         startingBlock.setDailyRates(daily_rates)
-        startingBlock.setNextBlock(instradamento)
+        #startingBlock.setNextBlock(instradamento)
         self.event_queue.push(startingBlock.start())
 
         while not self.event_queue.is_empty():
@@ -263,13 +249,13 @@ class SimulationEngine:
         rngs.plantSeeds(1)
         self.event_queue = EventQueue()
 
-        startingBlock, instradamento, autenticazione, compilazionePrecompilata, invioDiretto, inValutazione, endBlock = self.buildBlocks()
+        startingBlock, compilazionePrecompilata, invioDiretto, inValutazione, endBlock = self.buildBlocks()
 
         if daily_rates is None:
             daily_rates = self.getArrivalsRates()
 
         startingBlock.setDailyRates(daily_rates)
-        startingBlock.setNextBlock(instradamento)
+        #startingBlock.setNextBlock(instradamento)
         self.event_queue.push(startingBlock.start())
 
         while not self.event_queue.is_empty():
@@ -300,8 +286,8 @@ class SimulationEngine:
 
             # Costruisci i blocchi con replica_id
             self.event_queue = EventQueue()
-            startingBlock, instradamento, autenticazione, compilazionePrecompilata, invioDiretto, inValutazione, endBlock = self.buildBlocks(replica_id=rep)
-            endBlock.setStartBlock(startingBlock)
+            startingBlock, compilazionePrecompilata, invioDiretto, inValutazione, endBlock = self.buildBlocks(replica_id=rep)
+            #endBlock.setStartBlock(startingBlock)
 
             startingBlock.setDailyRates(daily_rates)
 

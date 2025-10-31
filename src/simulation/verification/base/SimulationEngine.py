@@ -18,7 +18,7 @@ from pathlib import Path
 from tabulate import tabulate
 from math import sqrt
 
-from src.batchMean import read_stats, computeBatchMeans, computeBatchStdev, getStudent
+from batchMean import read_stats, computeBatchMeans, computeBatchStdev, getStudent
 
 
 class SimulationEngine:
@@ -113,19 +113,19 @@ class SimulationEngine:
         instradamento.setNextBlock(autenticazione)
         endBlock.setStartBlock(startingBlock)
 
-        return startingBlock, instradamento, autenticazione, compilazionePrecompilata, invioDiretto, inValutazione, endBlock
+        return startingBlock, compilazionePrecompilata, invioDiretto, inValutazione, endBlock
 
     def normale(self, daily_rates: list[float] = None):
         rngs.plantSeeds(1)
         self.event_queue = EventQueue()
 
-        startingBlock, instradamento, autenticazione, compilazionePrecompilata, invioDiretto, inValutazione, endBlock = self.buildBlocks()
+        startingBlock, compilazionePrecompilata, invioDiretto, inValutazione, endBlock = self.buildBlocks()
 
         if daily_rates is None:
             daily_rates = self.getArrivalsRates()
 
         startingBlock.setDailyRates(daily_rates)
-        startingBlock.setNextBlock(instradamento)
+        #startingBlock.setNextBlock(instradamento)
         self.event_queue.push(startingBlock.start())
 
         while not self.event_queue.is_empty():
