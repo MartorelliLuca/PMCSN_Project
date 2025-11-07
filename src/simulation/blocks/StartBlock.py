@@ -16,7 +16,7 @@ class StartBlock(SimBlockInterface):
     Ogni volta che viene generato un utente si crea un evento per generare il successivo.
     """
 
-    def __init__(self, name, start_timestamp: datetime, end_timestamp:datetime):
+    def __init__(self, name, precompilataProbability):
         """Inizializza un nuovo blocco di partenza.
         
         Args:
@@ -27,15 +27,51 @@ class StartBlock(SimBlockInterface):
         """
         self.stream=1
         self.name = name
+        self.precompilataProbability = precompilataProbability
+        self.compilazionePrecompilata = None
+        self.invioDiretto = None
         self.next = None
         self.generated = 0
-        self.nextBlock = None
-        self.start_timestamp = start_timestamp                    # timestamp iniziale della simulazione
-        self.current_time = start_timestamp                       # tempo corrente nella simulazione
-        self.end_timestamp = end_timestamp    # tempo finale della simulazione (30 settembre incluso)
+        
         self.daily_rates = None                            # array di tassi medi giornalieri
-        self.entrate_nel_sistema = [0] * (self.get_index_for_date(end_timestamp) + 1)  # array per tenere traccia degli arrivi giornalieri
         self.last_date = None                              # per tracciare il cambio di data
+
+    def setInvioDiretto(self,nextBlock:SimBlockInterface):
+        """Imposta il blocco successivo da chiamare."""
+        self.invioDiretto = nextBlock
+
+    def setCompilazione(self,nextBlock:SimBlockInterface):
+        """Imposta il blocco successivo da chiamare."""
+        self.compilazionePrecompilata = nextBlock
+
+    def getServiceTime(self,time:datetime)->datetime:
+        from desPython import rngs
+        rngs.selectStream(self.stream)
+        exp= rvgs.Exponential(1/self.serviceRate)
+        return time + timedelta(seconds=exp)
+    
+    def isPrecompilata(self):
+        """Determina se il modulo è precompilato."""
+        from desPython import rngs
+        rngs.selectStream(self.stream)
+        n=rvgs.Uniform(0,1)
+        if n < self.precompilataProbability:
+            return True
+        return False
+
+    def setStartAndEndTimestamps(self, start_timestamp: datetime, end_timestamp: datetime):
+        """Imposta i timestamp di inizio e fine della simulazione.
+        
+        Args:
+            start_timestamp (datetime): Il timestamp di inizio della simulazione.
+            end_timestamp (datetime): Il timestamp di fine della simulazione.
+        """
+        self.start_timestamp = start_timestamp
+        self.current_time = start_timestamp
+        self.end_timestamp = end_timestamp
+        self.entrate_nel_sistema = [0] * (self.get_index_for_date(end_timestamp) + 1)  # array per tenere traccia degli arrivi giornalieri
+
+
 
     def setDailyRates(self, daily_rates: list[float]):
         """Imposta i tassi medi giornalieri per la simulazione.
@@ -61,9 +97,6 @@ class StartBlock(SimBlockInterface):
         return 0
 
 
-    def setNextBlock(self, nextBlock: SimBlockInterface):
-        """Imposta il blocco successivo da chiamare."""
-        self.nextBlock = nextBlock
 
     def getServiceTime(self, time: datetime) -> datetime:
         """Calcola il tempo di servizio esponenziale a partire da un timestamp specificato, usando il tasso giornaliero.
@@ -158,11 +191,15 @@ class StartBlock(SimBlockInterface):
         endTime = serving.get_last_state().service_end_time
         events = []
         self.entrate_nel_sistema[self.get_index_for_date(endTime)] += 1
-        if self.nextBlock:
-            event = self.nextBlock.putInQueue(serving, endTime)
-           
-            if event:
-                events.extend(event)        
+
+        precompilataSuccess= self.isPrecompilata()
+        if precompilataSuccess:
+            event=self.compilazionePrecompilata.putInQueue(serving, endTime)
+        else:
+            event=self.invioDiretto.putInQueue(serving, endTime)
+        if event:
+            events.extend(event)
+
         # Genera il prossimo evento se non abbiamo ancora superato il tempo finale della simulazione
         if self.current_time <= self.end_timestamp:
             new_event = self.start()

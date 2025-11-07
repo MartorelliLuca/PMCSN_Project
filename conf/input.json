@@ -5,7 +5,9 @@
     "pratichePerDipendente": 70,
     "mean": 66250.30,
     "variance": 30,
-    "successProbability": 0.96
+    "successProbability": 0.96,
+    "dropoutProbability": 0.5,
+    "precompilataProbability": 0.78
   },
   "compilazionePrecompilata": {
     "name": "CompilazionePrecompilata",
@@ -19,18 +21,9 @@
     "mean": 3,
     "variance": 0
   },
-  "instradamento": {
-    "name": "Instradamento",
-    "serviceRate": 3.0,
-    "serversNumber": 3,
-    "queueMaxLenght": 2000
-  },
-  "autenticazione": {
-    "name": "Autenticazione",
-    "serviceRate": 2.252,
-    "serversNumber": 4,
-    "successProbability": 0.96,
-    "compilazionePrecompilataProbability": 0.78
+  "start":{
+    "name": "Start",
+    "precompilataProbability": 0.78
   },
   "date": {
     "start": "2025-05-01",

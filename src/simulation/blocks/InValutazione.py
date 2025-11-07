@@ -13,7 +13,7 @@ from desPython.rvgsCostum import generate_denormalized_bounded_pareto,find_best_
 
 class InValutazione(SimBlockInterface):
     
-    def __init__(self, name, dipendenti,pratichePerDipendente, mean, variance, successProbability):
+    def __init__(self, name, dipendenti,pratichePerDipendente, mean, variance, successProbability, dropoutProbability, precompilataProbability):
        
         self.stream = 5
         self.name = name
@@ -21,11 +21,12 @@ class InValutazione(SimBlockInterface):
         self.variance = variance
         self.serversNumber = dipendenti*pratichePerDipendente
         self.normalServerNumber=self.serversNumber
-        self.accetpanceRate = successProbability
+        self.acceptanceRate = successProbability
+        self.dropoutProbability = dropoutProbability
+        self.precompilataProbability = precompilataProbability
         self.queueLenght = 0
         self.queue=[]
         self.working=0
-        self.instradamento = None
         self.end=None
         self.lower_bound=mean*0.001
         self.upper_bound=mean*8
@@ -38,30 +39,38 @@ class InValutazione(SimBlockInterface):
         )
 
         
-    def setInstradamento(self,instradamento:SimBlockInterface):
-        """Imposta il blocco di instradamento."""
-        self.instradamento = instradamento
+    def setInvioDiretto(self,nextBlock:SimBlockInterface):
+        """Imposta il blocco successivo da chiamare."""
+        self.invioDiretto = nextBlock
+
+    def setCompilazione(self,nextBlock:SimBlockInterface):
+        """Imposta il blocco successivo da chiamare."""
+        self.compilazionePrecompilata = nextBlock
 
     def setEnd(self,end:SimBlockInterface): 
         """Imposta il blocco di fine."""
         self.end = end
-
-    
-
 
     def getServiceTime(self,time:datetime)->datetime:
         from desPython import rngs
         rngs.selectStream(self.stream)
         lognormal = generate_denormalized_bounded_pareto(self.a,self.k,0.1,1.0,self.lower_bound,self.upper_bound)
         return time + timedelta(seconds=lognormal)
-    
 
 
     def getSuccess(self):
         from desPython import rngs
         rngs.selectStream(self.stream+100)
         n=rvgs.Uniform(0,1)
-        if n > self.accetpanceRate:
+        if n > self.acceptanceRate:
+            return False
+        return True
+
+    def getDropout(self):
+        from desPython import rngs
+        rngs.selectStream(self.stream+100)
+        n=rvgs.Uniform(0,1)
+        if n > self.dropoutProbability:
             return False
         return True
     
@@ -83,11 +92,20 @@ class InValutazione(SimBlockInterface):
         self.queue.append(person)
         person.append_state(state)
         if self.working < self.serversNumber:
-            events = self.putNextEvenet(timestamp)
+            events = self.putNextEvent(timestamp)
             return events if events else []
         return []
 
-    def putNextEvenet(self,exitQueueTime) -> list[Event]:
+    def isPrecompilata(self):
+        """Determina se il modulo è precompilato."""
+        from desPython import rngs
+        rngs.selectStream(self.stream)
+        n=rvgs.Uniform(0,1)
+        if n < self.precompilataProbability:
+            return True
+        return False
+
+    def putNextEvent(self,exitQueueTime) -> list[Event]:
         if len(self.queue) == 0:
             return []
         if self.working < self.serversNumber:
@@ -109,7 +127,7 @@ class InValutazione(SimBlockInterface):
         endTime = serving.get_last_state().service_end_time
         events=[]
         if self.queue:
-            event = self.putNextEvenet(endTime)
+            event = self.putNextEvent(endTime)
             if event:
                 events.extend(event)
 
@@ -117,7 +135,16 @@ class InValutazione(SimBlockInterface):
         if compilationSuccess:
             event=self.end.putInQueue(serving, endTime)
         else:
-            event=self.instradamento.putInQueue(serving, endTime)
+            compilationDropout = self.getDropout()
+            if compilationDropout:
+                #butta fuori dal sistema
+                event=self.end.putInQueue(serving, endTime)
+            else:        
+                precompilataSuccess= self.isPrecompilata()
+                if precompilataSuccess:
+                    event=self.compilazionePrecompilata.putInQueue(serving, endTime)
+                else:
+                    event=self.invioDiretto.putInQueue(serving, endTime)
         if event:
             events.extend(event)
         return events

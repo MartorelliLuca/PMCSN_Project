@@ -17,9 +17,18 @@ from simulation.blocks.Instradamento import Instradamento
 from pathlib import Path
 import json
 
+monthDays={
+    "may":31,
+    "june":30,
+    "july":31,
+    "august":31,
+    "september":30
+}
 
 class SimulationEngine:
     """Gestisce l'esecuzione della simulazione, orchestrando i blocchi di servizio e gli eventi."""
+    def __init__(self):    
+        self.stream=66
 
     def getArrivalsEqualsRates(self) -> list[float]:
         """Crea un array costante di arrivi per l’analisi del transitorio o per un mese specifico."""
@@ -106,30 +115,52 @@ class SimulationEngine:
             
             seed_base = rngs.getSeed() #just to print it on file
 
+    
+
+    def generateLambda(self,rate):
+        rngs.selectStream(self.stream)
+        exp= rvgs.Exponential(1/rate)
+        return 1/exp
+    
 
     def getArrivalsRates(self) -> list[float]:
         """Legge dal dataset i valori di arrivo giornalieri."""
-        conf_path = Path(__file__).resolve().parents[2] / "conf" / "dataset_arrivals.json"
+        conf_path = Path(__file__).resolve().parents[2] / "conf" / "months_arrival_rate.json"#{'may_arrival_rate': 0.2736, 'june_arrival_rate': 0.1412, 'july_arrival_rate': 0.1367, 'august_arrival_rate': 0.0912, 'september_arrival_rate': 0.2825, 'mean_arrival_rate': 0.1622935, 'max_arrival_rate': 0.4447835215743806}
         if not conf_path.exists():
             raise FileNotFoundError(f"File non trovato: {conf_path}")
 
         with conf_path.open("r", encoding="utf-8") as f:
             data = json.load(f)
+        print(data)
+        data.pop("mean_arrival_rate", None)
+        data.pop("max_arrival_rate", None)
+        rates=[]
+        for month, rate in data.items():
+            #sum=0
+            for i in range(monthDays[month]):
+                generated=self.generateLambda(rate)
+                #print(f"Generated for {month} rate {rate} day {i+1}: {1/generated}")
+                #sum+=generated
+                rates.append(generated)
+            #print(f"Tasso generato per {month}: {sum/monthDays[month]}, for rate: {1/rate}")
+        print(rates)
+        return rates
+            
 
-        days = data.get("days", [])
+
+
         return [float(day["lambda_per_sec"]) for day in days if "lambda_per_sec" in day]
 
     # Registry dei blocchi
     _REGISTRY = {
-        "inValutazione":            (InValutazione,              ("name", "dipendenti","pratichePerDipendente", "mean", "variance", "successProbability")),
+        "inValutazione":            (InValutazione,              ("name", "dipendenti","pratichePerDipendente", "mean", "variance", "successProbability",
+                                                                    "dropoutProbability", "precompilataProbability")),
         "compilazionePrecompilata": (CompilazionePrecompilata,   ("name", "serversNumber", "mean", "variance", "successProbability")),
         "invioDiretto":             (InvioDiretto,               ("name", "mean", "variance")),
-        "instradamento":            (Instradamento,              ("name", "serviceRate", "serversNumber", "queueMaxLenght")),
-        "autenticazione":           (Autenticazione,             ("name", "serviceRate", "serversNumber", "successProbability", "compilazionePrecompilataProbability")),
+        "start":                    (StartBlock,                 ("name", "precompilataProbability")),
     }
 
-    _FIELD_ALIASES = {
-    }
+    _FIELD_ALIASES = {}
 
     def _normalize_section(self, data: dict, section_name: str) -> dict:
         data = dict(data)
@@ -152,6 +183,7 @@ class SimulationEngine:
         return cls(**{f: data[f] for f in fields})
 
     def buildBlocks(self, replica_id):
+        #self.getArrivalsRates()
         cfg_path = Path(__file__).resolve().parents[2] / "conf" / "input.json"
         if not cfg_path.exists():
             raise FileNotFoundError(f"Config non trovata: {cfg_path}")
@@ -164,22 +196,25 @@ class SimulationEngine:
         inValutazione            = self._instantiate(cfg, "inValutazione")
         compilazionePrecompilata = self._instantiate(cfg, "compilazionePrecompilata")
         invioDiretto             = self._instantiate(cfg, "invioDiretto")
-
+        startingBlock             = self._instantiate(cfg, "start")
         start_date = datetime.fromisoformat(cfg["date"]["start"])
         end_date   = datetime.fromisoformat(cfg["date"]["end"]) + timedelta(days=1)
 
-        startingBlock = StartBlock(
-            "Start",
+        startingBlock.setStartAndEndTimestamps(
             start_timestamp=datetime.combine(start_date, datetime.min.time()),
             end_timestamp=datetime.combine(end_date, datetime.min.time())
         )
 
         # Wiring
-        startingBlock.setNextBlock(compilazionePrecompilata)
-        inValutazione.setInstradamento(compilazionePrecompilata) #TODO: in input e nelle richieste che rientrano da in valutazione ce da dividere il traffico per precompilata e invio diretto( si potrebbe mettere un blocco che fa lo splitting del traffico ma che non fa nient altro)
+        startingBlock.setCompilazione(compilazionePrecompilata)    
+        startingBlock.setInvioDiretto(invioDiretto)
+                
+
         compilazionePrecompilata.setNextBlock(inValutazione)
         invioDiretto.setNextBlock(inValutazione)
         inValutazione.setEnd(endBlock)
+        inValutazione.setInvioDiretto(invioDiretto)
+        inValutazione.setCompilazione(compilazionePrecompilata)
         endBlock.setStartBlock(startingBlock)
 
         return startingBlock, compilazionePrecompilata, invioDiretto, inValutazione, endBlock
@@ -198,22 +233,24 @@ class SimulationEngine:
         inValutazione            = self._instantiate(cfg, "inValutazione")
         compilazionePrecompilata = self._instantiate(cfg, "compilazionePrecompilata")
         invioDiretto             = self._instantiate(cfg, "invioDiretto")
+        startingBlock             = self._instantiate(cfg, "start")
+
 
         start_date = datetime.fromisoformat(cfg["date"]["start"])
         end_date   = datetime.fromisoformat(cfg["date"]["end"]) + timedelta(days=1)
 
-        startingBlock = StartBlock(
-            "Start",
+        startingBlock.setStartAndEndTimestamps(
             start_timestamp=datetime.combine(start_date, datetime.min.time()),
             end_timestamp=datetime.combine(end_date, datetime.min.time())
         )
 
         # Wiring
-        startingBlock.setNextBlock(compilazionePrecompilata)
-        #LE RICHIESTE CHE ESCONO DA IN VALUTAZIONE VANNO REINSERITE IN PRECOMPILATA/INVIO DIRETTO
-        inValutazione.setInstradamento(compilazionePrecompilata)
+        startingBlock.setCompilazione(compilazionePrecompilata)
+        startingBlock.setInvioDiretto(invioDiretto)
         compilazionePrecompilata.setNextBlock(inValutazione)
         invioDiretto.setNextBlock(inValutazione)
+        inValutazione.setInvioDiretto(invioDiretto)
+        inValutazione.setCompilazione(compilazionePrecompilata)
         inValutazione.setEnd(endBlock)
         endBlock.setStartBlock(startingBlock)
 
@@ -221,7 +258,7 @@ class SimulationEngine:
 
     def normale_single_iteration(self, daily_rates):
         """Avvia la simulazione con i tassi di arrivo specificati."""
-        rngs.plantSeeds(1)
+        rngs.plantSeeds(2)
         self.event_queue = EventQueue()
 
         startingBlock, compilazionePrecompilata, invioDiretto, inValutazione, endBlock = self.buildBlocksSingleIteration()
@@ -246,7 +283,7 @@ class SimulationEngine:
 
     def normale_with_constant_replication(self, daily_rates):
         """Avvia la simulazione con i tassi di arrivo specificati."""
-        rngs.plantSeeds(1)
+        rngs.plantSeeds(2)
         self.event_queue = EventQueue()
 
         startingBlock, compilazionePrecompilata, invioDiretto, inValutazione, endBlock = self.buildBlocks()
