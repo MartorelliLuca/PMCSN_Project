@@ -1,0 +1,4 @@
+Replica 1: seed = 123456789
+Replica 2: seed = 423676916
+Replica 1: seed = 123456789
+Replica 1: seed = 123456789

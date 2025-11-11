@@ -5,5 +5,6 @@
     "august": 0.0912,
     "september": 0.2825,
     "mean_arrival_rate": 0.1622935,
-    "max_arrival_rate": 0.4447835215743806
+    "max_arrival_rate": 0.4447835215743806,
+    "may_june": 0.2074
 }

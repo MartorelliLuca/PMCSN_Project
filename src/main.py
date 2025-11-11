@@ -69,7 +69,7 @@ def main():
     elif scelta_simulazione == "6":
         # Avvio simulazione
         print("\n--- Avvio della simulazione ---\n")
-        engine.run_transient_analysis(7, 123456789)
+        engine.run_transient_analysis(40, 123456789)
     elif scelta_simulazione == "7":
         # Avvio simulazione
         engine = PriorityEngine()

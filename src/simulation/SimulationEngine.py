@@ -32,29 +32,18 @@ class SimulationEngine:
 
     def getArrivalsEqualsRates(self) -> list[float]:
         """Crea un array costante di arrivi per l’analisi del transitorio o per un mese specifico."""
-        month = "max"
-        if False:
-            conf_path = Path(__file__).resolve().parents[2] / "conf" / "months_arrival_rate.json"
-            if not conf_path.exists():
-                raise FileNotFoundError(f"File non trovato: {conf_path}")
-            with conf_path.open("r", encoding="utf-8") as f:
-                data = json.load(f)
-            key = f"{month.lower()}_arrival_rate"
-            if key not in data:
-                raise KeyError(f"Chiave non trovata: {key}")
-            rate = float(data[key])
-        else:
-            conf_path = Path(__file__).resolve().parents[2] / "conf" / "arrival_rate.json"
-            if not conf_path.exists():
-                raise FileNotFoundError(f"File non trovato: {conf_path}")
-            with conf_path.open("r", encoding="utf-8") as f:
-                data = json.load(f)
-            rate = float(data["arrival_rate"])
-        return [rate] * 732
+        month = "may_june"
+        conf_path = Path(__file__).resolve().parents[2] / "conf" / "months_arrival_rate.json"
+        if not conf_path.exists():
+            raise FileNotFoundError(f"File non trovato: {conf_path}")
+        with conf_path.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+        rate = float(data[month])
+        return [rate] * 120                         #<- qua ci mettiamo il numero di giorni per il transitorio
     
 
     def getAccumulationArrivals(self) -> list[float]:
-        return [0.159+0.18] * 732
+        return [0.159+0.18] * 120
 
     def run_transient_analysis(self, n_replicas, seed_base):
         """
@@ -70,18 +59,18 @@ class SimulationEngine:
 
             # Costruisci i blocchi con replica_id
             self.event_queue = EventQueue()
-            startingBlock, instradamento, autenticazione, compilazionePrecompilata, invioDiretto, inValutazione, endBlock = self.buildBlocks(replica_id=rep)
+            startingBlock, compilazionePrecompilata, invioDiretto, inValutazione, endBlock = self.buildBlocks(replica_id=rep)
             endBlock.setStartBlock(startingBlock)
 
             # Imposta i daily_rates costanti da arrival_rate.json
             daily_rates = self.getArrivalsEqualsRates()
-            accumulationARrivals = self.getAccumulationArrivals()
-            startingBlock.setDailyRates(accumulationARrivals)
+            accumulationArrivals = self.getAccumulationArrivals()
+            startingBlock.setDailyRates(accumulationArrivals)
 
-            # Sposta l'intervallo temporale di 1 anno per ogni replica
-            shift_years = rep+1
-            start_date = startingBlock.start_timestamp.replace(year=startingBlock.start_timestamp.year + shift_years)
-            end_date = startingBlock.end_timestamp.replace(year=startingBlock.end_timestamp.year + shift_years)
+            # Non spostiamo l'intervallo temporale: ogni replica è una run indipendente
+            # che condivide la stessa finestra temporale (ma ha replica_id diverso).
+            start_date = startingBlock.start_timestamp
+            end_date = startingBlock.end_timestamp
             endBlock.setWorkingStatus(True)
             accumulating = True
             finishAccumulationDate = start_date + timedelta(hours=48)

@@ -132,7 +132,7 @@ def plot_aggregated_averages(queue_name, data, output_dir, replica_seeds):
     plt.savefig(f"{output_dir}/tempi_attesa_{queue_name.lower()}.jpg", dpi=150, bbox_inches='tight')
     plt.close()
 
-def analyze_transient_analysis_directory(transient_dir="transient_analysis_json", output_dir="graphs/transient_avg"):
+def analyze_transient_analysis_directory(transient_dir="../../src/transient_analysis_json", output_dir="graphs/transient_avg"):
     if not os.path.exists(transient_dir):
         print(f"Directory {transient_dir}/ non trovata.")
         return
