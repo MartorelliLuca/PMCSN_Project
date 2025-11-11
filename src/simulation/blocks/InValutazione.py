@@ -81,9 +81,6 @@ class InValutazione(SimBlockInterface):
     def get_serviceRate(self) -> float:
       
         return self.serviceRate    
-    
-    
-
 
     def putInQueue(self,person: Person,timestamp: datetime) ->list[Event]:
       

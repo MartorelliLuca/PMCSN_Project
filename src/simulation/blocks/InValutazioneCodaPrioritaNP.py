@@ -13,7 +13,7 @@ from desPython.rvgsCostum import generate_denormalized_bounded_pareto,find_best_
 
 class InValutazioneCodaPrioritaNP(SimBlockInterface):
     
-    def __init__(self, name, dipendenti,pratichePerDipendente, mean, variance, successProbability):
+    def __init__(self, name, dipendenti,pratichePerDipendente, mean, variance, successProbability, dropoutProbability, precompilataProbability):
        
         self.stream = 5
         self.name = name
@@ -21,6 +21,8 @@ class InValutazioneCodaPrioritaNP(SimBlockInterface):
         self.variance = variance
         self.serversNumber = dipendenti*pratichePerDipendente
         self.accetpanceRate = successProbability
+        self.dropoutProbability = dropoutProbability
+        self.precompilataProbability = precompilataProbability
         self.queueLenght = {
             "Diretta":0,
             "Pesante":0,
@@ -33,7 +35,6 @@ class InValutazioneCodaPrioritaNP(SimBlockInterface):
         }
 
         self.working=0
-        self.instradamento = None
         self.end=None
         self.lower_bound=mean*0.01
         self.upper_bound=mean*8
@@ -46,9 +47,13 @@ class InValutazioneCodaPrioritaNP(SimBlockInterface):
         )
 
         
-    def setInstradamento(self,instradamento:SimBlockInterface):
-        """Imposta il blocco di instradamento."""
-        self.instradamento = instradamento
+    def setInvioDiretto(self,nextBlock:SimBlockInterface):
+        """Imposta il blocco successivo da chiamare."""
+        self.invioDiretto = nextBlock
+
+    def setCompilazione(self,nextBlock:SimBlockInterface):
+        """Imposta il blocco successivo da chiamare."""
+        self.compilazionePrecompilata = nextBlock
 
     def setEnd(self,end:SimBlockInterface): 
         """Imposta il blocco di fine."""
@@ -56,11 +61,19 @@ class InValutazioneCodaPrioritaNP(SimBlockInterface):
 
     
 
-    def getServiceTime(self)->datetime:
+    def getServiceTime(self,time:datetime)->datetime:
         from desPython import rngs
         rngs.selectStream(self.stream)
         lognormal = generate_denormalized_bounded_pareto(self.a,self.k,0.1,1.0,self.lower_bound,self.upper_bound)
-        return timedelta(seconds=lognormal)
+        return time + timedelta(seconds=lognormal)
+
+    def getDropout(self):
+        from desPython import rngs
+        rngs.selectStream(self.stream+100)
+        n=rvgs.Uniform(0,1)
+        if n > self.dropoutProbability:
+            return False
+        return True
 
 
     def getServiceTimeOld(self,time:datetime)->datetime:
@@ -130,9 +143,6 @@ class InValutazioneCodaPrioritaNP(SimBlockInterface):
                     queueName="Pesante"
                 else:
                     return []
-        
-        
-
         if self.working < self.serversNumber:
             self.working += 1
             person=self.queue[queueName].pop(0)
@@ -160,7 +170,16 @@ class InValutazioneCodaPrioritaNP(SimBlockInterface):
         if compilationSuccess:
             event=self.end.putInQueue(serving, endTime)
         else:
-            event=self.instradamento.putInQueue(serving, endTime)
+            compilationDropout = self.getDropout()
+            if compilationDropout:
+                #butta fuori dal sistema
+                event=self.end.putInQueue(serving, endTime)
+            else:        
+                precompilataSuccess= self.isPrecompilata()
+                if precompilataSuccess:
+                    event=self.compilazionePrecompilata.putInQueue(serving, endTime)
+                else:
+                    event=self.invioDiretto.putInQueue(serving, endTime)
         if event:
             events.extend(event)
         return events

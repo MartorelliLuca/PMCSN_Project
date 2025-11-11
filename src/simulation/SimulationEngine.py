@@ -1,5 +1,5 @@
 from desPython import rngs, rvgs
-import csv
+import csv, math
 from simulation.states.NormalState import NormalState
 from simulation.EventQueue import EventQueue
 from models.person import Person
@@ -103,13 +103,59 @@ class SimulationEngine:
             print(f"✅ Replica {rep+1} completata! ({start_date.date()} → {end_date.date()})")
             
             seed_base = rngs.getSeed() #just to print it on file
-
     
 
     def generateLambda(self,rate):
         rngs.selectStream(self.stream)
         exp= rvgs.Exponential(1/rate)
         return 1/exp
+    
+        # --- Generatore a bassa varianza, vedi se va bene alex visto che hai detto di usare una normale---
+    def generateLambda_low_var(self, base_rate: float, cv: float = 0.20, clip: tuple[float,float] | None = (0.6, 1.6)) -> float:
+        """
+        Ritorna un lambda giornaliero con varianza ridotta.
+        Usa un moltiplicatore lognormale con media 1 (mu = -0.5*sigma^2).
+        cv ~ deviazione standard relativa del moltiplicatore (0.10-0.30 tipico).
+        clip = (min,max) per tagliare outlier (None per disabilitare).
+        """
+        rngs.selectStream(self.stream)
+        # rapporto tra varianza e media^2 del moltiplicatore = cv^2 = exp(sigma^2) - 1
+        sigma2 = math.log(1.0 + cv*cv)
+        sigma = math.sqrt(sigma2)
+        z = rvgs.Normal(0.0, 1.0)                   # N(0,1) dal tuo rvgs
+        mult = math.exp(-0.5 * sigma2 + sigma * z)  # E[mult] = 1
+
+        if clip is not None:
+            lo, hi = clip
+            if mult < lo: mult = lo
+            if mult > hi: mult = hi
+
+        return base_rate * mult
+    
+
+
+    def _gamma_int_shape(self, k: int) -> float:
+        """Gamma(shape=k, scale=1) per k intero usando Erlang(k, 1.0)."""
+        # Erlang(n, b) nel tuo rvgs è Gamma(k=n, scale=b)
+        return rvgs.Erlang(k, 1.0)
+
+    def _beta_via_gamma(self, a: int, b: int) -> float:
+        """Beta(a,b) via due Gamma(a,1) e Gamma(b,1) (a,b interi)."""
+        x = self._gamma_int_shape(a)
+        y = self._gamma_int_shape(b)
+        return x / (x + y)
+
+    def generateLambda_ultra_low_var(self, base_rate: float, delta: float = 0.10, k: int = 50) -> float:
+        """
+        Moltiplicatore bounded in [1-delta, 1+delta] con Beta(k,k) -> varianza ≈ delta^2/(2k+1).
+        delta: ampiezza max in percentuale (0.10 = ±10%)
+        k: 'concentrazione' (più alto = varianza minore)
+        """
+        rngs.selectStream(self.stream)
+        u = self._beta_via_gamma(k, k)          # U ~ Beta(k,k)
+        mult = (1.0 - delta) + 2.0 * delta * u  # in [1-delta, 1+delta], E[mult]=1
+        return base_rate * mult
+
     
 
     def getArrivalsRates(self) -> list[float]:
@@ -123,22 +169,40 @@ class SimulationEngine:
         print(data)
         data.pop("mean_arrival_rate", None)
         data.pop("max_arrival_rate", None)
-        rates=[]
-        for month, rate in data.items():
-            #sum=0
-            for i in range(monthDays[month]):
-                generated=self.generateLambda(rate)
-                #print(f"Generated for {month} rate {rate} day {i+1}: {1/generated}")
-                #sum+=generated
-                rates.append(generated)
-            #print(f"Tasso generato per {month}: {sum/monthDays[month]}, for rate: {1/rate}")
-        print(rates)
+        rates = []
+
+        # Prepare output CSV path and ensure directory exists
+        out_path = Path(__file__).resolve().parents[2] / "transient_analysis_json" / "generated_daily_arrivals.csv"
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Write generated daily rates to CSV (overwrite each run)
+        with out_path.open("w", encoding="utf-8", newline="") as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(["month", "day", "lambda_per_sec"])
+
+            # dentro getArrivalsRates(), nel loop per i giorni del mese:
+            for month, rate in data.items():
+                for i in range(monthDays[month]):
+                    # stagionalità come prima
+                    if month == "may" or month == "september":
+                        if (month == "may" and i < 15) or (month == "september" and i >= monthDays[month]-15):
+                            base = rate * 1.2    # primi 15 di maggio ↑, ultimi 15 di settembre ↑
+                        else:
+                            base = rate * 0.8
+                    else:
+                        base = rate
+                    
+                    generated = self.generateLambda_low_var(base_rate=base, cv=0.18, clip=(0.6, 1.6))
+                    #generated = self.generateLambda_ultra_low_var(base_rate=base, delta=0.08, k=80)
+
+                    rates.append(generated)
+                    writer.writerow([month, i + 1, generated])
+
+        print(f"Wrote {len(rates)} generated daily rates to: {out_path}")
         return rates
-            
+    
 
 
-
-        return [float(day["lambda_per_sec"]) for day in days if "lambda_per_sec" in day]
 
     # Registry dei blocchi
     _REGISTRY = {
@@ -342,3 +406,5 @@ class SimulationEngine:
             print(f"✅ Replica {rep+1} completata! ({start_date.date()} → {end_date.date()})")
 
             seed_base = rngs.getSeed() #just for printing
+
+

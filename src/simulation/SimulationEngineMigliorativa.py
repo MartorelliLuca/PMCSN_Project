@@ -10,49 +10,48 @@ from simulation.blocks.ExponentialService import ExponentialService
 from simulation.blocks.StartBlock import StartBlock
 from simulation.blocks.InvioDiretto import InvioDiretto
 from simulation.blocks.CompilazionePrecompilata import CompilazionePrecompilata
-from simulation.blocks.InValutazioneCodaPrioritaNP import InValutazioneCodaPrioritaNP
+from simulation.blocks.InValutazione import InValutazione
 from simulation.blocks.Autenticazione import Autenticazione
 from simulation.blocks.Instradamento import Instradamento
 
 from pathlib import Path
 import json
 
+monthDays={
+    "may":31,
+    "june":30,
+    "july":31,
+    "august":31,
+    "september":30
+}
 
 class SimulationEngine:
-    """Versione migliorativa con coda prioritaria NP - Gestisce l'esecuzione della simulazione, orchestrando i blocchi di servizio e gli eventi."""
+    """Gestisce l'esecuzione della simulazione, orchestrando i blocchi di servizio e gli eventi."""
+    def __init__(self):    
+        self.stream=66
 
     def getArrivalsEqualsRates(self) -> list[float]:
-        """Crea un array costante di arrivi per l'analisi del transitorio o per un mese specifico."""
-        month = "mean_arrival_rate"
-        if False: # change if you want to test monthly rates
-            conf_path = Path(__file__).resolve().parents[2] / "conf" / "months_arrival_rate.json"
-            if not conf_path.exists():
-                raise FileNotFoundError(f"File non trovato: {conf_path}")
-            with conf_path.open("r", encoding="utf-8") as f:
-                data = json.load(f)
-            key = f"{month.lower()}_arrival_rate"
-            if key not in data:
-                raise KeyError(f"Chiave non trovata: {key}")
-            rate = float(data[key])
-        else:
-            conf_path = Path(__file__).resolve().parents[2] / "conf" / "arrival_rate.json"
-            if not conf_path.exists():
-                raise FileNotFoundError(f"File non trovato: {conf_path}")
-            with conf_path.open("r", encoding="utf-8") as f:
-                data = json.load(f)
-            rate = float(data["arrival_rate"])
-        return [rate] * 1000
-    
+        """Crea un array costante di arrivi per l’analisi del transitorio o per un mese specifico."""
+        month = "may_june"
+        conf_path = Path(__file__).resolve().parents[2] / "conf" / "months_arrival_rate.json"
+        if not conf_path.exists():
+            raise FileNotFoundError(f"File non trovato: {conf_path}")
+        with conf_path.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+        rate = float(data[month])
+        return [rate] * 120                         #<- qua ci mettiamo il numero di giorni per il transitorio
     
 
     def getAccumulationArrivals(self) -> list[float]:
-        return [0.159+0.18] * 732
+        return [0.159+0.18] * 120
 
     def run_transient_analysis(self, n_replicas, seed_base):
         """
         Metodo delle replicazioni per analisi del transitorio.
         Ogni replica avanza di un anno rispetto alla precedente.
         """
+
+        seeds_path = Path(__file__).resolve().parents[2] / "used_seeds.txt"
         rngs.plantSeeds(seed_base)
 
         for rep in range(n_replicas):
@@ -60,25 +59,26 @@ class SimulationEngine:
 
             # Costruisci i blocchi con replica_id
             self.event_queue = EventQueue()
-            startingBlock, instradamento, autenticazione, compilazionePrecompilata, invioDiretto, inValutazione, endBlock = self.buildBlocks(replica_id=rep)
+            startingBlock, compilazionePrecompilata, invioDiretto, inValutazione, endBlock = self.buildBlocks(replica_id=rep)
             endBlock.setStartBlock(startingBlock)
 
             # Imposta i daily_rates costanti da arrival_rate.json
             daily_rates = self.getArrivalsEqualsRates()
-            accumulationARrivals = self.getAccumulationArrivals()
-            startingBlock.setDailyRates(accumulationARrivals)
+            accumulationArrivals = self.getAccumulationArrivals()
+            startingBlock.setDailyRates(accumulationArrivals)
 
-            # Sposta l'intervallo temporale di 1 anno per ogni replica
-            shift_years = rep+1
-            start_date = startingBlock.start_timestamp.replace(year=startingBlock.start_timestamp.year + shift_years)
-            end_date = startingBlock.end_timestamp.replace(year=startingBlock.end_timestamp.year + shift_years)
+            # Non spostiamo l'intervallo temporale: ogni replica è una run indipendente
+            # che condivide la stessa finestra temporale (ma ha replica_id diverso).
+            start_date = startingBlock.start_timestamp
+            end_date = startingBlock.end_timestamp
             endBlock.setWorkingStatus(True)
             accumulating = True
             finishAccumulationDate = start_date + timedelta(hours=48)
             startingBlock.start_timestamp = start_date
             startingBlock.current_time = start_date
             startingBlock.end_timestamp = end_date
-
+            with seeds_path.open("a", encoding="utf-8") as f:
+                            f.write(f"Replica {rep+1}: seed = {seed_base}\n")
             # Avvio simulazione
             self.event_queue.push(startingBlock.start())
             while not self.event_queue.is_empty():
@@ -102,33 +102,54 @@ class SimulationEngine:
             endBlock.finalize()
             print(f"✅ Replica {rep+1} completata! ({start_date.date()} → {end_date.date()})")
             
+            seed_base = rngs.getSeed() #just to print it on file
 
+    
 
+    def generateLambda(self,rate):
+        rngs.selectStream(self.stream)
+        exp= rvgs.Exponential(1/rate)
+        return 1/exp
+    
 
     def getArrivalsRates(self) -> list[float]:
         """Legge dal dataset i valori di arrivo giornalieri."""
-        conf_path = Path(__file__).resolve().parents[2] / "conf" / "dataset_arrivals.json"
+        conf_path = Path(__file__).resolve().parents[2] / "conf" / "months_arrival_rate.json"#{'may_arrival_rate': 0.2736, 'june_arrival_rate': 0.1412, 'july_arrival_rate': 0.1367, 'august_arrival_rate': 0.0912, 'september_arrival_rate': 0.2825, 'mean_arrival_rate': 0.1622935, 'max_arrival_rate': 0.4447835215743806}
         if not conf_path.exists():
             raise FileNotFoundError(f"File non trovato: {conf_path}")
 
         with conf_path.open("r", encoding="utf-8") as f:
             data = json.load(f)
+        print(data)
+        data.pop("mean_arrival_rate", None)
+        data.pop("max_arrival_rate", None)
+        rates=[]
+        for month, rate in data.items():
+            #sum=0
+            for i in range(monthDays[month]):
+                generated=self.generateLambda(rate)
+                #print(f"Generated for {month} rate {rate} day {i+1}: {1/generated}")
+                #sum+=generated
+                rates.append(generated)
+            #print(f"Tasso generato per {month}: {sum/monthDays[month]}, for rate: {1/rate}")
+        print(rates)
+        return rates
+            
 
-        days = data.get("days", [])
+
+
         return [float(day["lambda_per_sec"]) for day in days if "lambda_per_sec" in day]
 
     # Registry dei blocchi
     _REGISTRY = {
-        "inValutazione":            (InValutazioneCodaPrioritaNP, ("name", "dipendenti","pratichePerDipendente", "mean", "variance", "successProbability")),
-        "compilazionePrecompilata": (CompilazionePrecompilata,    ("name", "serversNumber", "mean", "variance", "successProbability")),
-        "invioDiretto":             (InvioDiretto,                ("name", "mean", "variance")),
-        "instradamento":            (Instradamento,               ("name", "serviceRate", "serversNumber", "queueMaxLenght")),
-        "autenticazione":           (Autenticazione,              ("name", "serviceRate", "serversNumber", "successProbability", "compilazionePrecompilataProbability")),
+        "inValutazione":            (InValutazione,              ("name", "dipendenti","pratichePerDipendente", "mean", "variance", "successProbability",
+                                                                    "dropoutProbability", "precompilataProbability")),
+        "compilazionePrecompilata": (CompilazionePrecompilata,   ("name", "serversNumber", "mean", "variance", "successProbability")),
+        "invioDiretto":             (InvioDiretto,               ("name", "mean", "variance")),
+        "start":                    (StartBlock,                 ("name", "precompilataProbability")),
     }
 
-    _FIELD_ALIASES = {
-        "instradamento": {"queueMaxLength": "queueMaxLenght"}
-    }
+    _FIELD_ALIASES = {}
 
     def _normalize_section(self, data: dict, section_name: str) -> dict:
         data = dict(data)
@@ -151,6 +172,7 @@ class SimulationEngine:
         return cls(**{f: data[f] for f in fields})
 
     def buildBlocks(self, replica_id):
+        #self.getArrivalsRates()
         cfg_path = Path(__file__).resolve().parents[2] / "conf" / "input.json"
         if not cfg_path.exists():
             raise FileNotFoundError(f"Config non trovata: {cfg_path}")
@@ -163,32 +185,28 @@ class SimulationEngine:
         inValutazione            = self._instantiate(cfg, "inValutazione")
         compilazionePrecompilata = self._instantiate(cfg, "compilazionePrecompilata")
         invioDiretto             = self._instantiate(cfg, "invioDiretto")
-        instradamento            = self._instantiate(cfg, "instradamento")
-        autenticazione           = self._instantiate(cfg, "autenticazione")
-
+        startingBlock             = self._instantiate(cfg, "start")
         start_date = datetime.fromisoformat(cfg["date"]["start"])
         end_date   = datetime.fromisoformat(cfg["date"]["end"]) + timedelta(days=1)
 
-        startingBlock = StartBlock(
-            "Start",
+        startingBlock.setStartAndEndTimestamps(
             start_timestamp=datetime.combine(start_date, datetime.min.time()),
             end_timestamp=datetime.combine(end_date, datetime.min.time())
         )
 
         # Wiring
-        startingBlock.setNextBlock(instradamento)
-        instradamento.setQueueFullFallBackBlock(endBlock)
-        inValutazione.setInstradamento(instradamento)
-        autenticazione.setInstradamento(instradamento)
-        autenticazione.setCompilazione(compilazionePrecompilata)
-        autenticazione.setInvioDiretto(invioDiretto)
+        startingBlock.setCompilazione(compilazionePrecompilata)    
+        startingBlock.setInvioDiretto(invioDiretto)
+                
+
         compilazionePrecompilata.setNextBlock(inValutazione)
         invioDiretto.setNextBlock(inValutazione)
         inValutazione.setEnd(endBlock)
-        instradamento.setNextBlock(autenticazione)
+        inValutazione.setInvioDiretto(invioDiretto)
+        inValutazione.setCompilazione(compilazionePrecompilata)
         endBlock.setStartBlock(startingBlock)
 
-        return startingBlock, instradamento, autenticazione, compilazionePrecompilata, invioDiretto, inValutazione, endBlock
+        return startingBlock, compilazionePrecompilata, invioDiretto, inValutazione, endBlock
 
 
     def buildBlocksSingleIteration(self):
@@ -204,45 +222,41 @@ class SimulationEngine:
         inValutazione            = self._instantiate(cfg, "inValutazione")
         compilazionePrecompilata = self._instantiate(cfg, "compilazionePrecompilata")
         invioDiretto             = self._instantiate(cfg, "invioDiretto")
-        instradamento            = self._instantiate(cfg, "instradamento")
-        autenticazione           = self._instantiate(cfg, "autenticazione")
+        startingBlock             = self._instantiate(cfg, "start")
+
 
         start_date = datetime.fromisoformat(cfg["date"]["start"])
         end_date   = datetime.fromisoformat(cfg["date"]["end"]) + timedelta(days=1)
 
-        startingBlock = StartBlock(
-            "Start",
+        startingBlock.setStartAndEndTimestamps(
             start_timestamp=datetime.combine(start_date, datetime.min.time()),
             end_timestamp=datetime.combine(end_date, datetime.min.time())
         )
 
         # Wiring
-        startingBlock.setNextBlock(instradamento)
-        instradamento.setQueueFullFallBackBlock(endBlock)
-        inValutazione.setInstradamento(instradamento)
-        autenticazione.setInstradamento(instradamento)
-        autenticazione.setCompilazione(compilazionePrecompilata)
-        autenticazione.setInvioDiretto(invioDiretto)
+        startingBlock.setCompilazione(compilazionePrecompilata)
+        startingBlock.setInvioDiretto(invioDiretto)
         compilazionePrecompilata.setNextBlock(inValutazione)
         invioDiretto.setNextBlock(inValutazione)
+        inValutazione.setInvioDiretto(invioDiretto)
+        inValutazione.setCompilazione(compilazionePrecompilata)
         inValutazione.setEnd(endBlock)
-        instradamento.setNextBlock(autenticazione)
         endBlock.setStartBlock(startingBlock)
 
-        return startingBlock, instradamento, autenticazione, compilazionePrecompilata, invioDiretto, inValutazione, endBlock
+        return startingBlock, compilazionePrecompilata, invioDiretto, inValutazione, endBlock
 
     def normale_single_iteration(self, daily_rates):
         """Avvia la simulazione con i tassi di arrivo specificati."""
-        rngs.plantSeeds(1)
+        rngs.plantSeeds(2)
         self.event_queue = EventQueue()
 
-        startingBlock, instradamento, autenticazione, compilazionePrecompilata, invioDiretto, inValutazione, endBlock = self.buildBlocksSingleIteration()
+        startingBlock, compilazionePrecompilata, invioDiretto, inValutazione, endBlock = self.buildBlocksSingleIteration()
 
         if daily_rates is None:
             daily_rates = self.getArrivalsRates()
 
         startingBlock.setDailyRates(daily_rates)
-        startingBlock.setNextBlock(instradamento)
+        #startingBlock.setNextBlock(instradamento)
         self.event_queue.push(startingBlock.start())
 
         while not self.event_queue.is_empty():
@@ -258,16 +272,16 @@ class SimulationEngine:
 
     def normale_with_constant_replication(self, daily_rates):
         """Avvia la simulazione con i tassi di arrivo specificati."""
-        rngs.plantSeeds(1)
+        rngs.plantSeeds(2)
         self.event_queue = EventQueue()
 
-        startingBlock, instradamento, autenticazione, compilazionePrecompilata, invioDiretto, inValutazione, endBlock = self.buildBlocks()
+        startingBlock, compilazionePrecompilata, invioDiretto, inValutazione, endBlock = self.buildBlocks()
 
         if daily_rates is None:
             daily_rates = self.getArrivalsRates()
 
         startingBlock.setDailyRates(daily_rates)
-        startingBlock.setNextBlock(instradamento)
+        #startingBlock.setNextBlock(instradamento)
         self.event_queue.push(startingBlock.start())
 
         while not self.event_queue.is_empty():
@@ -286,19 +300,24 @@ class SimulationEngine:
         Metodo delle replicazioni anche per la simulazione "normale".
         Ogni replica avanza di un anno rispetto alla precedente.
         """
+        seeds_path = Path(__file__).resolve().parents[2] / "used_seeds.txt"
         rngs.plantSeeds(seed_base)
+
         for rep in range(n_replicas):
             print(f"\n--- Avvio replica {rep+1}/{n_replicas} ---")
-            
+
+            # Scrivi il seed usato su file
+            with seeds_path.open("a", encoding="utf-8") as f:
+                f.write(f"Replica {rep+1}: seed = {seed_base}\n")
 
             # Costruisci i blocchi con replica_id
             self.event_queue = EventQueue()
-            startingBlock, instradamento, autenticazione, compilazionePrecompilata, invioDiretto, inValutazione, endBlock = self.buildBlocks(replica_id=rep)
-            endBlock.setStartBlock(startingBlock)
+            startingBlock, compilazionePrecompilata, invioDiretto, inValutazione, endBlock = self.buildBlocks(replica_id=rep)
+            #endBlock.setStartBlock(startingBlock)
 
             startingBlock.setDailyRates(daily_rates)
 
-            # Sposta l'intervallo temporale di 1 anno per ogni replica
+            # Sposta l’intervallo temporale di 1 anno per ogni replica
             shift_years = rep
             start_date = startingBlock.start_timestamp.replace(year=startingBlock.start_timestamp.year + shift_years)
             end_date   = startingBlock.end_timestamp.replace(year=startingBlock.end_timestamp.year + shift_years)
@@ -318,6 +337,8 @@ class SimulationEngine:
                         for new_event in new_events:
                             self.event_queue.push(new_event)
 
-            # Finaliza la replica
+            # Finalizza la replica
             endBlock.finalize()
             print(f"✅ Replica {rep+1} completata! ({start_date.date()} → {end_date.date()})")
+
+            seed_base = rngs.getSeed() #just for printing
