@@ -20,7 +20,8 @@ class InValutazioneCodaPrioritaNP(SimBlockInterface):
         self.mean = mean
         self.variance = variance
         self.serversNumber = dipendenti*pratichePerDipendente
-        self.accetpanceRate = successProbability
+        self.normalServerNumber=self.serversNumber
+        self.acceptanceRate = successProbability
         self.dropoutProbability = dropoutProbability
         self.precompilataProbability = precompilataProbability
         self.queueLenght = {
@@ -36,7 +37,7 @@ class InValutazioneCodaPrioritaNP(SimBlockInterface):
 
         self.working=0
         self.end=None
-        self.lower_bound=mean*0.01
+        self.lower_bound=mean*0.001
         self.upper_bound=mean*8
         self.a,self.k = find_best_normalized_pareto_params(
             original_mean=mean,
@@ -61,11 +62,11 @@ class InValutazioneCodaPrioritaNP(SimBlockInterface):
 
     
 
-    def getServiceTime(self,time:datetime)->datetime:
+    def getServiceTime(self)->datetime:
         from desPython import rngs
         rngs.selectStream(self.stream)
         lognormal = generate_denormalized_bounded_pareto(self.a,self.k,0.1,1.0,self.lower_bound,self.upper_bound)
-        return time + timedelta(seconds=lognormal)
+        return timedelta(seconds=lognormal)
 
     def getDropout(self):
         from desPython import rngs
@@ -80,7 +81,7 @@ class InValutazioneCodaPrioritaNP(SimBlockInterface):
         from desPython import rngs
         rngs.selectStream(self.stream)
         lognormal = generate_denormalized_bounded_pareto(self.a,self.k,0.1,1.0,self.lower_bound,self.upper_bound)
-        return time + timedelta(seconds=lognormal)
+        return timedelta(seconds=lognormal)
     
 
 
@@ -88,7 +89,7 @@ class InValutazioneCodaPrioritaNP(SimBlockInterface):
         from desPython import rngs
         rngs.selectStream(self.stream+100)
         n=rvgs.Uniform(0,1)
-        if n > self.accetpanceRate:
+        if n > self.acceptanceRate:
             return False
         return True
     
@@ -99,9 +100,15 @@ class InValutazioneCodaPrioritaNP(SimBlockInterface):
     def get_serviceRate(self) -> float:
       
         return self.serviceRate    
-    
-    
-    
+
+    def isPrecompilata(self):
+        """Determina se il modulo è precompilato."""
+        from desPython import rngs
+        rngs.selectStream(self.stream)
+        n=rvgs.Uniform(0,1)
+        if n < self.precompilataProbability:
+            return True
+        return False
 
     def putInQueue(self,person: Person,timestamp: datetime) ->list[Event]:
         comingFrom=person.get_last_state().get_service_name()

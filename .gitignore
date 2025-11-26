@@ -62,3 +62,6 @@ src/daily_stats.json
 
 daily_stats*
 
+ 
+
+ *.csv

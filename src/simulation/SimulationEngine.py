@@ -1,18 +1,16 @@
 from desPython import rngs, rvgs
 import csv, math
-from simulation.states.NormalState import NormalState
 from simulation.EventQueue import EventQueue
 from models.person import Person
 from datetime import datetime, timedelta
 
 from simulation.blocks.EndBlock import EndBlock
-from simulation.blocks.ExponentialService import ExponentialService
 from simulation.blocks.StartBlock import StartBlock
 from simulation.blocks.InvioDiretto import InvioDiretto
 from simulation.blocks.CompilazionePrecompilata import CompilazionePrecompilata
 from simulation.blocks.InValutazione import InValutazione
-from simulation.blocks.Autenticazione import Autenticazione
-from simulation.blocks.Instradamento import Instradamento
+from simulation.blocks.EndBlockModificato import EndBlockModificato
+
 
 from pathlib import Path
 import json
@@ -104,13 +102,7 @@ class SimulationEngine:
             
             seed_base = rngs.getSeed() #just to print it on file
     
-
-    def generateLambda(self,rate):
-        rngs.selectStream(self.stream)
-        exp= rvgs.Exponential(1/rate)
-        return 1/exp
-    
-        # --- Generatore a bassa varianza, vedi se va bene alex visto che hai detto di usare una normale---
+    # --- Generatore a bassa varianza, vedi se va bene alex visto che hai detto di usare una normale---
     def generateLambda_low_var(self, base_rate: float, cv: float = 0.20, clip: tuple[float,float] | None = (0.6, 1.6)) -> float:
         """
         Ritorna un lambda giornaliero con varianza ridotta.
@@ -139,26 +131,9 @@ class SimulationEngine:
         # Erlang(n, b) nel tuo rvgs è Gamma(k=n, scale=b)
         return rvgs.Erlang(k, 1.0)
 
-    def _beta_via_gamma(self, a: int, b: int) -> float:
-        """Beta(a,b) via due Gamma(a,1) e Gamma(b,1) (a,b interi)."""
-        x = self._gamma_int_shape(a)
-        y = self._gamma_int_shape(b)
-        return x / (x + y)
-
-    def generateLambda_ultra_low_var(self, base_rate: float, delta: float = 0.10, k: int = 50) -> float:
-        """
-        Moltiplicatore bounded in [1-delta, 1+delta] con Beta(k,k) -> varianza ≈ delta^2/(2k+1).
-        delta: ampiezza max in percentuale (0.10 = ±10%)
-        k: 'concentrazione' (più alto = varianza minore)
-        """
-        rngs.selectStream(self.stream)
-        u = self._beta_via_gamma(k, k)          # U ~ Beta(k,k)
-        mult = (1.0 - delta) + 2.0 * delta * u  # in [1-delta, 1+delta], E[mult]=1
-        return base_rate * mult
-
     
 
-    def getArrivalsRates(self) -> list[float]:
+    def getArrivalsRates(self,n_replicas=1,folder="defualt_arrivals") -> list[float]:
         """Legge dal dataset i valori di arrivo giornalieri."""
         conf_path = Path(__file__).resolve().parents[2] / "conf" / "months_arrival_rate.json"#{'may_arrival_rate': 0.2736, 'june_arrival_rate': 0.1412, 'july_arrival_rate': 0.1367, 'august_arrival_rate': 0.0912, 'september_arrival_rate': 0.2825, 'mean_arrival_rate': 0.1622935, 'max_arrival_rate': 0.4447835215743806}
         if not conf_path.exists():
@@ -172,7 +147,7 @@ class SimulationEngine:
         rates = []
 
         # Prepare output CSV path and ensure directory exists
-        out_path = Path(__file__).resolve().parents[2] / "transient_analysis_json" / "generated_daily_arrivals.csv"
+        out_path = Path(__file__).resolve().parents[2] / folder / f"generated_daily_arrivals{n_replicas}.csv"
         out_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Write generated daily rates to CSV (overwrite each run)
@@ -272,6 +247,44 @@ class SimulationEngine:
 
         return startingBlock, compilazionePrecompilata, invioDiretto, inValutazione, endBlock
 
+    def buildBlocksFinito(self, replica_id):
+        #self.getArrivalsRates()
+        cfg_path = Path(__file__).resolve().parents[2] / "conf" / "input.json"
+        if not cfg_path.exists():
+            raise FileNotFoundError(f"Config non trovata: {cfg_path}")
+
+        with cfg_path.open("r", encoding="utf-8") as f:
+            cfg = json.load(f)
+
+        # Passa il replica_id qui
+        endBlock                 = EndBlockModificato(replica_id=replica_id,outDirString="finite_horizon_json_base")
+        inValutazione            = self._instantiate(cfg, "inValutazione")
+        compilazionePrecompilata = self._instantiate(cfg, "compilazionePrecompilata")
+        invioDiretto             = self._instantiate(cfg, "invioDiretto")
+        startingBlock             = self._instantiate(cfg, "start")
+        start_date = datetime.fromisoformat(cfg["date"]["start"])
+        end_date   = datetime.fromisoformat(cfg["date"]["end"]) + timedelta(days=1)
+
+        startingBlock.setStartAndEndTimestamps(
+            start_timestamp=datetime.combine(start_date, datetime.min.time()),
+            end_timestamp=datetime.combine(end_date, datetime.min.time())
+        )
+
+        # Wiring
+        startingBlock.setCompilazione(compilazionePrecompilata)    
+        startingBlock.setInvioDiretto(invioDiretto)
+                
+
+        compilazionePrecompilata.setNextBlock(inValutazione)
+        invioDiretto.setNextBlock(inValutazione)
+        inValutazione.setEnd(endBlock)
+        inValutazione.setInvioDiretto(invioDiretto)
+        inValutazione.setCompilazione(compilazionePrecompilata)
+        endBlock.setStartBlock(startingBlock)
+
+        return startingBlock, compilazionePrecompilata, invioDiretto, inValutazione, endBlock
+
+
 
     def buildBlocksSingleIteration(self):
         cfg_path = Path(__file__).resolve().parents[2] / "conf" / "input.json"
@@ -308,6 +321,55 @@ class SimulationEngine:
         endBlock.setStartBlock(startingBlock)
 
         return startingBlock, compilazionePrecompilata, invioDiretto, inValutazione, endBlock
+
+
+
+    def run_finito_experiment(self, n_replicas=4, seed_base=3):
+
+        seeds_path = Path(__file__).resolve().parents[2] / "used_seeds.txt"
+        rngs.plantSeeds(seed_base)
+
+        for rep in range(n_replicas):
+            print(f"\n--- Avvio replica {rep+1}/{n_replicas} ---")
+
+            # Scrivi il seed usato su file
+            with seeds_path.open("a", encoding="utf-8") as f:
+                f.write(f"Replica {rep+1}: seed = {seed_base}\n")
+
+            # Costruisci i blocchi con replica_id
+            self.event_queue = EventQueue()
+            startingBlock, compilazionePrecompilata, invioDiretto, inValutazione, endBlock = self.buildBlocksFinito(replica_id=rep)
+            #endBlock.setStartBlock(startingBlock)
+            daily_rates = self.getArrivalsRates(rep,"finite_horizon_json_base_arrivals")
+            startingBlock.setDailyRates(daily_rates)
+
+            # Sposta l’intervallo temporale di 1 anno per ogni replica
+            shift_years = 0
+            start_date = startingBlock.start_timestamp.replace(year=startingBlock.start_timestamp.year + shift_years)
+            end_date   = startingBlock.end_timestamp.replace(year=startingBlock.end_timestamp.year + shift_years)
+
+            startingBlock.start_timestamp = start_date
+            startingBlock.current_time    = start_date
+            startingBlock.end_timestamp   = end_date
+
+            # Avvio simulazione
+            self.event_queue.push(startingBlock.start())
+            while not self.event_queue.is_empty():
+                event = self.event_queue.pop()
+                event = event[0] if isinstance(event, list) else event
+                if event.handler:
+                    new_events = event.handler(event.person)
+                    if new_events:
+                        for new_event in new_events:
+                            self.event_queue.push(new_event)
+
+            # Finalizza la replica
+            endBlock.finalize()
+            print(f"✅ Replica {rep+1} completata! ({start_date.date()} → {end_date.date()})")
+
+            seed_base = rngs.getSeed() #just for printing
+
+
 
     def normale_single_iteration(self, daily_rates):
         """Avvia la simulazione con i tassi di arrivo specificati."""
