@@ -1,7 +1,7 @@
 import sys
 from simulation.SimulationEngine import SimulationEngine as BaseEngine
 from simulation.SimulationEngineMigliorativa import SimulationEngine as MigliorativoEngine
-from simulation.verification.base.SimulationEngine import SimulationEngine as ExponentialEngine 
+from simulation.verification.base.SimulationEngine import SimulationEngineExp as ExponentialEngine 
 from simulation.verification.SimulationEnginePriority import SimulationEngine as PriorityEngine
 
 
@@ -26,7 +26,7 @@ def menu_verifiche():
     
     if scelta == "1":
         engine = ExponentialEngine()
-        daily_rates = engine.getArrivalsRatesToInfinite()
+        daily_rates = engine.getArrivalsRates()
         print("▶ Avvio verifica modello base e analisi batch...\n")
         engine.run_and_analyze(
             daily_rates=daily_rates,

@@ -6,6 +6,7 @@ import os
 from desPython import rvms
 
 
+
 """
 IMPORTANTE: autocorr_stats implementa la funzionalita di acs.py di DesPython.
 
@@ -14,13 +15,12 @@ NOTE: Vecchia versioene, utilizzare batchMeanPriority.py
 
 
 
-def read_stats(file_path, n):
-    """
+"""def read_stats(file_path, n):
+
     Legge i dati dai file JSON giornalieri.
     Per ogni servizio, crea liste di valori per queue_time, service_time, response_time.
     Se response_time non è presente, viene calcolato come queue_time + service_time.
     Restituisce: dict { "Service:metric": [valori,...] }
-    """
     service_data = {}
     with open(file_path, 'r') as f:
         first = True
@@ -49,6 +49,42 @@ def read_stats(file_path, n):
                     if len(service_data[key]) >= n:
                         continue
                     service_data[key].extend(values[:n - len(service_data[key])])
+    return service_data"""
+def read_stats(file_path, n):
+    """
+    Legge i dati dai file JSON giornalieri come quello che hai mostrato.
+    Per ogni servizio, crea liste di valori per queue_time, service_time, response_time.
+    Restituisce: dict { "Service:metric": [valori,...] }
+    """
+    import json
+
+    service_data = {}
+
+    with open(file_path, 'r', encoding='utf-8') as f:
+        for line in f:
+            day = json.loads(line)  # carica il JSON della giornata
+            stats = day.get("stats", {})
+            for service_name, service_stats in stats.items():
+                queue_values = service_stats["data"].get("queue_time", [])
+                exec_values = service_stats["data"].get("executing_time", [])
+                min_len = min(len(queue_values), len(exec_values))
+                response_values = [queue_values[i] + exec_values[i] for i in range(min_len)]
+
+                metrics_map = {
+                    "queue_time": queue_values,
+                    "service_time": exec_values,
+                    "response_time": response_values
+                }
+
+                for metric, values in metrics_map.items():
+                    key = f"{service_name}:{metric}"
+                    if key not in service_data:
+                        service_data[key] = []
+                    # Limita a n valori
+                    if len(service_data[key]) >= n:
+                        continue
+                    service_data[key].extend(values[:n - len(service_data[key])])
+    
     return service_data
 
 def computeBatchMeans(data, batch_count):

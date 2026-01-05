@@ -13,7 +13,9 @@ from simulation.blocks.EndBlockModificato import EndBlockModificato
 
 
 from pathlib import Path
+from typing import Optional, Tuple
 import json
+
 
 monthDays={
     "may":31,
@@ -103,7 +105,14 @@ class SimulationEngine:
             seed_base = rngs.getSeed() #just to print it on file
     
     # --- Generatore a bassa varianza, vedi se va bene alex visto che hai detto di usare una normale---
-    def generateLambda_low_var(self, base_rate: float, cv: float = 0.20, clip: tuple[float,float] | None = (0.6, 1.6)) -> float:
+    #def generateLambda_low_var(self, base_rate: float, cv: float = 0.20, clip: tuple[float,float] | None = (0.6, 1.6)) -> float:       ---- COMMENTATO NON COMPATIBILE CON PYTHON VERSION 3.9 
+    def generateLambda_low_var(
+    self,
+    base_rate: float,
+    cv: float = 0.20,
+    clip: Optional[Tuple[float, float]] = (0.6, 1.6)
+    ) -> float:
+
         """
         Ritorna un lambda giornaliero con varianza ridotta.
         Usa un moltiplicatore lognormale con media 1 (mu = -0.5*sigma^2).

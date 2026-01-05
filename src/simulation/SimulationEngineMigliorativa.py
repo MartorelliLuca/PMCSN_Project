@@ -16,6 +16,7 @@ from simulation.blocks.EndBlockModificato import EndBlockModificato
 
 
 from pathlib import Path
+from typing import Optional, Tuple
 import json
 
 monthDays={
@@ -34,7 +35,7 @@ class SimulationEngine:
     def getArrivalsEqualsRates(self) -> list[float]:
         """Crea un array costante di arrivi per l’analisi del transitorio o per un mese specifico."""
         month = "may_june"
-        conf_path = Path(__file__).resolve().parents[2] / "conf" / "months_arrival_rate.json"
+        conf_path = Path(__file__).resolve().parents[4] / "conf" / "months_arrival_rate.json"
         if not conf_path.exists():
             raise FileNotFoundError(f"File non trovato: {conf_path}")
         with conf_path.open("r", encoding="utf-8") as f:
@@ -106,7 +107,14 @@ class SimulationEngine:
             seed_base = rngs.getSeed() #just to print it on file
     
     # --- Generatore a bassa varianza, vedi se va bene alex visto che hai detto di usare una normale---
-    def generateLambda_low_var(self, base_rate: float, cv: float = 0.20, clip: tuple[float,float] | None = (0.6, 1.6)) -> float:
+    #def generateLambda_low_var(self, base_rate: float, cv: float = 0.20, clip: tuple[float,float] | None = (0.6, 1.6)) -> float:
+    def generateLambda_low_var(
+    self,
+    base_rate: float,
+    cv: float = 0.20,
+    clip: Optional[Tuple[float, float]] = (0.6, 1.6)
+    ) -> float:
+
         """
         Ritorna un lambda giornaliero con varianza ridotta.
         Usa un moltiplicatore lognormale con media 1 (mu = -0.5*sigma^2).
