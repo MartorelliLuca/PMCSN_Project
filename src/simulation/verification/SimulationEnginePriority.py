@@ -8,9 +8,7 @@ from simulation.blocks.EndBlock import EndBlock
 from simulation.blocks.StartBlock import StartBlock
 from simulation.verification.base.InvioDirettoExp import InvioDiretto
 from simulation.verification.base.CompilazionePrecompilataExp import CompilazionePrecompilataExponential
-from simulation.verification.InValutazionePrioritaExp import InValutazioneCodaPrioritaNP
-from simulation.blocks.Autenticazione import Autenticazione
-from simulation.blocks.Instradamento import Instradamento
+from simulation.verification.InValutazionePrioritaExp import InValutazioneCodaPrioritaNP_Exp
 
 import json
 from math import sqrt
@@ -18,7 +16,7 @@ from pathlib import Path
 from tabulate import tabulate
 from math import sqrt
 
-from batchMean import read_stats, computeBatchMeans, computeBatchStdev, getStudent
+from batch.batchMeanPriority import read_stats, computeBatchMeans, computeBatchStdev, getStudent
 
 
 
@@ -27,16 +25,12 @@ class SimulationEngine:
     con calcolo del tempo medio in coda per code a priorità."""
 
     _REGISTRY = {
-        "inValutazione":            (InValutazioneCodaPrioritaNP, ("name", "serversNumber", "mean", "variance", "successProbability")),
+        "inValutazione":            (InValutazioneCodaPrioritaNP_Exp, ("name", "serversNumber", "mean", "variance", "successProbability")),
         "compilazionePrecompilata": (CompilazionePrecompilataExponential, ("name", "serversNumber", "mean", "variance", "successProbability")),
         "invioDiretto":             (InvioDiretto, ("name", "mean", "variance")),
-        "instradamento":            (Instradamento, ("name", "serviceRate", "serversNumber", "queueMaxLenght")),
-        "autenticazione":           (Autenticazione, ("name", "serviceRate", "serversNumber", "successProbability", "compilazionePrecompilataProbability")),
     }
 
-    _FIELD_ALIASES = {
-        "instradamento": {"queueMaxLength": "queueMaxLenght"}
-    }
+    _FIELD_ALIASES = {}
 
     def _get_conf_path(self, filename: str) -> Path:
         return Path(__file__).resolve().parents[3] / "conf" / filename
@@ -94,45 +88,42 @@ class SimulationEngine:
         inValutazione            = self._instantiate(cfg, "inValutazione")
         compilazionePrecompilata = self._instantiate(cfg, "compilazionePrecompilata")
         invioDiretto             = self._instantiate(cfg, "invioDiretto")
-        instradamento            = self._instantiate(cfg, "instradamento")
-        autenticazione           = self._instantiate(cfg, "autenticazione")
 
         # Date
         start_date = datetime.fromisoformat(cfg["date"]["start"])
         end_date   = datetime.fromisoformat(cfg["date"]["end"]) + timedelta(days=1)
 
-        startingBlock = StartBlock(
-            "Start",
-            start_timestamp=datetime.combine(start_date, datetime.min.time()),
-            end_timestamp=datetime.combine(end_date, datetime.min.time())
+        precompilataProbability = cfg.get("precompilataProbability", 0.78) 
+        startingBlock = StartBlock("Start", precompilataProbability)
+        startingBlock.setStartAndEndTimestamps(
+            datetime.combine(start_date, datetime.min.time()),
+            datetime.combine(end_date, datetime.min.time())
         )
 
+
         # Wiring blocchi
-        startingBlock.setNextBlock(instradamento)
-        instradamento.setQueueFullFallBackBlock(endBlock)
-        inValutazione.setInstradamento(instradamento)
-        inValutazione.setEnd(endBlock)
+        # Wiring
+        startingBlock.setCompilazione(compilazionePrecompilata)
+        startingBlock.setInvioDiretto(invioDiretto)
         compilazionePrecompilata.setNextBlock(inValutazione)
         invioDiretto.setNextBlock(inValutazione)
-        autenticazione.setInstradamento(instradamento)
-        autenticazione.setCompilazione(compilazionePrecompilata)
-        autenticazione.setInvioDiretto(invioDiretto)
-        instradamento.setNextBlock(autenticazione)
+        inValutazione.setEnd(endBlock)
+        inValutazione.setCompilazione(compilazionePrecompilata)
+        inValutazione.setInvioDiretto(invioDiretto)
         endBlock.setStartBlock(startingBlock)
 
-        return startingBlock, instradamento, autenticazione, compilazionePrecompilata, invioDiretto, inValutazione, endBlock
-
+        return startingBlock, compilazionePrecompilata, invioDiretto, inValutazione, endBlock
+    
     def normale(self, daily_rates: list[float] = None):
         rngs.plantSeeds(1)
         self.event_queue = EventQueue()
 
-        startingBlock, instradamento, autenticazione, compilazionePrecompilata, invioDiretto, inValutazione, endBlock = self.buildBlocks()
+        startingBlock, compilazionePrecompilata, invioDiretto, inValutazione, endBlock = self.buildBlocks()
 
         if daily_rates is None:
             daily_rates = self.getArrivalsRates()
 
         startingBlock.setDailyRates(daily_rates)
-        startingBlock.setNextBlock(instradamento)
         self.event_queue.push(startingBlock.start())
 
         while not self.event_queue.is_empty():

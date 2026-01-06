@@ -18,18 +18,9 @@
       "mean": 3,
       "variance": 0.0
     },
-    "instradamento": {
-      "name": "Instradamento",
-      "serviceRate": 3,
-      "serversNumber": 3,
-      "queueMaxLenght": 2000
-    },
-    "autenticazione": {
-      "name": "Autenticazione",
-      "serviceRate": 2.252,
-      "serversNumber": 4,
-      "successProbability": 0.96,
-      "compilazionePrecompilataProbability": 0.78
+    "start":{
+    "name": "Start",
+    "precompilataProbability": 0.78
     },
     "date": {
       "start": "2025-05-01",

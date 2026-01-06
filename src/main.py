@@ -36,7 +36,7 @@ def menu_verifiche():
         )
     elif scelta == "2":
         engine = PriorityEngine()
-        daily_rates = engine.getArrivalsRatesToInfinite()
+        daily_rates = engine.getArrivalsRates()
         print("▶ Avvio verifica modello migliorativo e analisi batch...\n")
         engine.run_and_analyze(
             daily_rates=daily_rates,
