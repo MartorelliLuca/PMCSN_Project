@@ -86,7 +86,7 @@ class SimulationEngineExp:
         return base_rate * mult
 
     def getArrivalsRates(self, n_replicas=1, folder="default_arrivals") -> list[float]:
-        conf_path = Path(__file__).resolve().parents[4] / "conf" / "months_arrival_rate.json"
+        conf_path = Path(__file__).resolve().parents[4] / "conf" / "arrival_rate.json"
 
         if not conf_path.exists():
             raise FileNotFoundError(f"File non trovato: {conf_path}")
@@ -94,33 +94,10 @@ class SimulationEngineExp:
         with conf_path.open("r", encoding="utf-8") as f:
             data = json.load(f)
 
-        data.pop("mean_arrival_rate", None)
-        data.pop("max_arrival_rate", None)
 
         rates = []
-        out_path = Path(__file__).resolve().parents[2] / folder / f"generated_daily_arrivals_{n_replicas}.csv"
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-
-        with out_path.open("w", encoding="utf-8", newline="") as csvfile:
-            writer = csv.writer(csvfile)
-            writer.writerow(["month", "day", "lambda_per_sec"])
-
-            for month, rate in data.items():
-                for day in range(monthDays[month]):
-
-                    if month in ("may", "september"):
-                        if (month == "may" and day < 15) or (month == "september" and day >= monthDays[month] - 15):
-                            base = rate * 1.2
-                        else:
-                            base = rate * 0.8
-                    else:
-                        base = rate
-
-                    lam = self.generateLambda_low_var(base_rate=base, cv=0.18)
-                    rates.append(lam)
-                    writer.writerow([month, day + 1, lam])
-
-        return rates
+   
+        return [data["arrival_rate"]]*200
 
     # =========================================================
     # REGISTRY ESPONENZIALE
