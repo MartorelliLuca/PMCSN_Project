@@ -1,14 +1,4 @@
 {
-    "Instradamento": {
-        "queue_time": 0.0,
-        "service_time": 0.333,
-        "response_time": 0.333
-    },
-    "Autenticazione": {
-        "queue_time": 0.0,
-        "service_time": 0.444,
-        "response_time": 0.444
-    },
     "CompilazionePrecompilata": {
         "queue_time": 2.6479,
         "service_time": 34.3784,

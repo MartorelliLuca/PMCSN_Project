@@ -66,14 +66,19 @@ class SimulationEngine:
         rate = float(data["arrival_rate"])
         return [rate] * 300
 
-    def getArrivalsRates(self) -> list[float]:
-        conf_path = self._get_conf_path("dataset_arrivals.json")
+    def getArrivalsRates(self, n_replicas=1, folder="default_arrivals") -> list[float]:
+        conf_path = Path(__file__).resolve().parents[3] / "conf" / "arrival_rate.json"
+
         if not conf_path.exists():
             raise FileNotFoundError(f"File non trovato: {conf_path}")
+
         with conf_path.open("r", encoding="utf-8") as f:
             data = json.load(f)
-        days = data.get("days", [])
-        return [float(day["lambda_per_sec"]) for day in days if "lambda_per_sec" in day]
+
+
+        rates = []
+   
+        return [data["arrival_rate"]]*200
 
     def buildBlocks(self):
         cfg_path = self._get_conf_path("inputVerif2.json")
