@@ -30,16 +30,32 @@ class SimulationEngine:
     def __init__(self):    
         self.stream=66
 
-    def getArrivalsEqualsRates(self) -> list[float]:
-        """Crea un array costante di arrivi per l’analisi del transitorio o per un mese specifico."""
-        month = "may_june"
+    def getArrivalsEqualsRates(self, months: list[str], days_per_month: list[int]) -> list[float]:
+        if len(months) != len(days_per_month):
+            raise ValueError("months e days_per_month devono avere la stessa lunghezza")
+
         conf_path = Path(__file__).resolve().parents[2] / "conf" / "months_arrival_rate.json"
         if not conf_path.exists():
             raise FileNotFoundError(f"File non trovato: {conf_path}")
+
         with conf_path.open("r", encoding="utf-8") as f:
             data = json.load(f)
-        rate = float(data[month])
-        return [rate] * 120                         #<- qua ci mettiamo il numero di giorni per il transitorio
+
+        rates = []
+        for m, ndays in zip(months, days_per_month):
+            # prova prima "may", poi "may_arrival_rate"
+            if m in data:
+                rate = float(data[m])
+            elif f"{m}_arrival_rate" in data:
+                rate = float(data[f"{m}_arrival_rate"])
+            else:
+                raise KeyError(f"Mese '{m}' non presente (né '{m}' né '{m}_arrival_rate') in months_arrival_rate.json")
+
+            rates.extend([rate] * int(ndays))
+
+        return rates
+
+
     
 
     def getAccumulationArrivals(self) -> list[float]:
@@ -63,17 +79,14 @@ class SimulationEngine:
             endBlock.setStartBlock(startingBlock)
 
             # Imposta i daily_rates costanti da arrival_rate.json
-            daily_rates = self.getArrivalsEqualsRates()
-            accumulationArrivals = self.getAccumulationArrivals()
-            startingBlock.setDailyRates(accumulationArrivals)
+            daily_rates = self.getArrivalsEqualsRates(["may", "june"], [31, 190])
+            startingBlock.setDailyRates(daily_rates)
 
             # Non spostiamo l'intervallo temporale: ogni replica è una run indipendente
             # che condivide la stessa finestra temporale (ma ha replica_id diverso).
             start_date = startingBlock.start_timestamp
             end_date = startingBlock.end_timestamp
             endBlock.setWorkingStatus(True)
-            accumulating = True
-            finishAccumulationDate = start_date + timedelta(hours=48)
             startingBlock.start_timestamp = start_date
             startingBlock.current_time = start_date
             startingBlock.end_timestamp = end_date
@@ -85,14 +98,6 @@ class SimulationEngine:
                 event = self.event_queue.pop()
                 event = event[0] if isinstance(event, list) else event
                 if event.handler:
-
-                    eventdate=event.timestamp
-                    if eventdate > finishAccumulationDate and accumulating:
-                        print(f"--- Fine accumulo, inizio raccolta dati il {eventdate} ---")
-                        endBlock.setWorkingStatus(True)
-                        accumulating = False    
-                        startingBlock.setDailyRates(daily_rates)
-
                     new_events = event.handler(event.person)
                     if new_events:
                         for new_event in new_events:
