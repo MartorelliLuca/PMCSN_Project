@@ -1,14 +1,4 @@
 {
-    "Instradamento": {
-        "queue_time": 0.0,
-        "service_time": 0.333,
-        "response_time": 0.333
-    },
-    "Autenticazione": {
-        "queue_time": 0.0,
-        "service_time": 0.444,
-        "response_time": 0.444
-    },
     "CompilazionePrecompilata": {
         "queue_time": 2.6479,
         "service_time": 34.3784,
@@ -20,21 +10,21 @@
         "response_time": 3.3757
     },
     "InValutazione_Pesante": {
-        "service_time": 9.8590,
-        "queue_time": 12.6566, 
-        "response_time": 22.5156
+        "service_time": 9.85,
+        "queue_time": 11.5801, 
+        "response_time": 21.4301
 
     },
     "InValutazione_Leggera": {
         "service_time": 2.2454,
-        "queue_time": 4.9448, 
-        "response_time": 7.1902
+        "queue_time": 4.8564, 
+        "response_time": 7.1018
 
     },
     "InValutazione_Diretta": {
     "service_time": 3.9447,       
-    "queue_time": 3.0826,
-    "response_time": 7.0273
+    "queue_time": 2.93622,
+    "response_time": 6.88092
 }
 
 }

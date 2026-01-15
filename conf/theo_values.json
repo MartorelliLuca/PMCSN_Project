@@ -1,17 +1,17 @@
 {
     "CompilazionePrecompilata": {
-        "queue_time": 2.6479,
+        "queue_time": 2.011,
         "service_time": 34.3784,
-        "response_time": 37.0263
+        "response_time": 36.3894
     },
     "InvioDiretto": {
-        "queue_time": 0.3757,
+        "queue_time": 0.3333,
         "service_time": 3,
-        "response_time": 3.3757
+        "response_time": 3.3333
     },
     "InValutazione": {
-        "queue_time": 2.0664,
-        "service_time": 39.447,
-        "response_time": 41.5134
+        "queue_time": 1.2186,
+        "service_time": 38.447,
+        "response_time": 39.6656
     }
 }

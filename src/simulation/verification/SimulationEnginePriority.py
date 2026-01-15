@@ -399,10 +399,12 @@ class SimulationEngine:
                     se = sqrt(var_sim / k_eff)
                     tcrit = getStudent(k_eff)
                     ci = (mean_sim - tcrit * se, mean_sim + tcrit * se)
+                    half_width = (ci[1] - ci[0]) / 2
+                    rho1 = stats[key].get("autocorr_1", None)
                 else:
                     mean_sim = None
                     ci = (None, None)
-
+                
                 # 🔹 Accumula solo tempi di risposta
                 if metric == "response_time":
                     total_theo += theo_val if theo_val is not None else 0.0
@@ -418,6 +420,8 @@ class SimulationEngine:
                     f"{theo_val:.4f}" if theo_val is not None else "-",
                     f"{mean_sim:.4f}" if mean_sim is not None else "-",
                     f"[{ci[0]:.4f}, {ci[1]:.4f}]" if mean_sim is not None else "-",
+                    f"±{half_width:.4f}" if mean_sim is not None else "-",
+                    f"{rho1:.4f}" if rho1 is not None else "-",
                     "✅" if check else "❌"
                 ])
 
@@ -434,7 +438,7 @@ class SimulationEngine:
             print(f"\n📌 Servizio: {service}")
             print(tabulate(
                 metrics,
-                headers=["Metrica", "Teorico", "Simulato", "95% CI", "Coerente?"],
+                headers=["Metrica", "Teorico", "Simulato", "95% CI","Semi-Ampiezza","Autocorrelazione", "Coerente?"],
                 tablefmt="fancy_grid"
             ))
         

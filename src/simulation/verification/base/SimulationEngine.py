@@ -234,6 +234,14 @@ class SimulationEngineExp:
         response_times_sim = []
         total_theo = 0.0
 
+        def autocorr_lag1(x):
+            n = len(x)
+            if n < 2:
+                return None
+            mean_x = sum(x) / n
+            num = sum((x[i] - mean_x) * (x[i-1] - mean_x) for i in range(1, n))
+            den = sum((xi - mean_x) ** 2 for xi in x)
+            return num / den if den != 0 else None
 
     # Per ogni servizio e metrica presenti nei valori teorici
         for service, metrics in theo_values.items():
@@ -242,6 +250,8 @@ class SimulationEngineExp:
 
                 if key in stats:
                     values = stats[key]
+                
+                    rho1 = autocorr_lag1(values)
 
                 # Calcolo batch means
                     batch_means = computeBatchMeans(values, batch_count)
@@ -269,6 +279,9 @@ class SimulationEngineExp:
                 check = (
                     mean_sim is not None and ci[0] <= theo_val <= ci[1]
                 )
+                half_width = (
+                    (ci[1] - ci[0]) / 2 if mean_sim is not None and ci[0] is not None else None
+                )
 
                 rows.append([
                     service,
@@ -276,6 +289,8 @@ class SimulationEngineExp:
                     f"{theo_val:.4f}" if theo_val is not None else "-",
                     f"{mean_sim:.4f}" if mean_sim is not None else "-",
                     f"[{ci[0]:.4f}, {ci[1]:.4f}]" if mean_sim is not None else "-",
+                    f"±{half_width:.4f}" if half_width is not None else "-",
+                    f"{rho1:.4f}" if rho1 is not None else "-",
                     "✅" if check else "❌"
                 ])
 
@@ -290,7 +305,7 @@ class SimulationEngineExp:
             print(f"\n📌 Servizio: {service}")
             print(tabulate(
                 metrics,
-                headers=["Metrica", "Teorico", "Simulato", "95% CI", "Coerente?"],
+                headers=["Metrica", "Teorico", "Simulato", "95% CI", "Semi-Ampiezza","Autocorrelazione","Coerente?"],
                 tablefmt="fancy_grid"
             ))
 
