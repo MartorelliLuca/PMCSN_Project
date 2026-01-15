@@ -6,11 +6,9 @@ import matplotlib.pyplot as plt
 
 # --- Configurazione centri (da input.json) ---
 centers_config = {
-    "inValutazione": {"serversNumber":1, "mean": 3.9447},
-    "compilazionePrecompilata": {"serversNumber": 8, "mean": 30},
-    "invioDiretto": {"serversNumber": 1, "mean": 3},
-    "instradamento": {"serversNumber": 3, "mean": 0.3333},
-    "autenticazione": {"serversNumber": 4, "mean": 0.4444}
+    "ValutazionePratiche": {"serversNumber":1, "mean": 3.9447},
+    "ModifichePrecompilata": {"serversNumber": 8, "mean": 30},
+    "InvioDiretto": {"serversNumber": 1, "mean": 3},
 }
 
 # --- Carica dati giornalieri dal JSON ---

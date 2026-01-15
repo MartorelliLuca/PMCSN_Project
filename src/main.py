@@ -64,9 +64,9 @@ def main():
     print("┌" + "─"*58 + "┐")
     print("│" + " "*18 + "MENU PRINCIPALE" + " "*25 + "│")
     print("├" + "─"*58 + "┤")
-    print("│  1 - Simulazioni" + " "*40 + "│")
-    print("│  2 - Verifiche modelli" + " "*33 + "│")
-    print("│  0 - Esci" + " "*47 + "│")
+    print("│  1 - Simulazioni" + " "*41 + "│")
+    print("│  2 - Verifiche modelli" + " "*35 + "│")
+    print("│  0 - Esci" + " "*48 + "│")
     print("└" + "─"*58 + "┘")
     
     scelta_menu = input("\n➤ Inserisci scelta: ").strip()
@@ -85,8 +85,8 @@ def main():
     print("\n" + "┌" + "─"*58 + "┐")
     print("│" + " "*20 + "SELEZIONA MODELLO" + " "*21 + "│")
     print("├" + "─"*58 + "┤")
-    print("│  1 - Modello Base" + " "*39 + "│")
-    print("│  2 - Modello Migliorativo" + " "*31 + "│")
+    print("│  1 - Modello Base" + " "*40 + "│")
+    print("│  2 - Modello Migliorativo" + " "*32 + "│")
     print("└" + "─"*58 + "┘")
     
     scelta_modello = input("\n➤ Inserisci scelta: ").strip()
@@ -106,9 +106,9 @@ def main():
     print("│" + " "*17 + "SELEZIONA SIMULAZIONE" + " "*20 + "│")
     print("├" + "─"*58 + "┤")
     print("│  1 - Orizzonte finito (10 repliche)" + " "*22 + "│")
-    print("│  2 - Orizzonte finito (1 replica)" + " "*23 + "│")
-    print("│  3 - Orizzonte finito (tasso variabile, 16 repliche)" + " "*4 + "│")
-    print("│  4 - Analisi transitoria (40 repliche)" + " "*18 + "│")
+    print("│  2 - Orizzonte finito (1 replica)" + " "*24 + "│")
+    print("│  3 - Orizzonte finito (tasso variabile, 16 repliche)" + " "*5 + "│")
+    print("│  4 - Analisi transitoria (6 repliche)" + " "*20 + "│")
     print("└" + "─"*58 + "┘")
     
     scelta_simulazione = input("\n➤ Inserisci scelta: ").strip()
@@ -129,8 +129,8 @@ def main():
         engine.normale_with_replication(16, 123456789, daily_rates)
         
     elif scelta_simulazione == "4":
-        print("▶ Avvio analisi transitoria (40 repliche)...\n")
-        engine.run_transient_analysis(40, 123456789)
+        print("▶ Avvio analisi transitoria (6 repliche)...\n")
+        engine.run_transient_analysis(6, 123456789)
 
     else:
         print("✗ Scelta non valida. Uscita.")

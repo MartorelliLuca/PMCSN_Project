@@ -4,7 +4,7 @@
       "serversNumber": 1,
       "mean": 3.9447,
       "variance": 0.0,
-      "successProbability": 0.96
+      "successProbability": 1
     },
     "compilazionePrecompilata": {
       "name": "CompilazionePrecompilata",

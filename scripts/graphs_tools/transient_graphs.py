@@ -5,47 +5,7 @@ import os
 from collections import defaultdict
 import pandas as pd
 
-def load_stats_data(filename):
-    data = []
-    with open(filename, 'r') as f:
-        lines = [line for line in f if line.strip()]
-        for line in lines:
-            data.append(json.loads(line))
-    return data
-
-def extract_queue_data(data):
-    queue_data = defaultdict(lambda: {
-        'queue_times': [],
-        'execution_times': [],
-        'queue_lengths': [],
-        'response_times': []
-    })
-
-    for entry in data:
-        if entry['type'] != 'daily_summary':
-            continue
-
-        stats = entry['stats']
-        for queue_name, queue_stats in stats.items():
-            if 'data' in queue_stats:
-                qt = queue_stats['data']['queue_time']
-                et = queue_stats['data']['executing_time']
-                rt = [q + e for q, e in zip(qt, et)] if qt and et and len(qt) == len(et) else []
-
-                queue_data[queue_name]['queue_times'].extend(qt)
-                queue_data[queue_name]['execution_times'].extend(et)
-                queue_data[queue_name]['queue_lengths'].extend(queue_stats['data']['queue_lenght'])
-                queue_data[queue_name]['response_times'].extend(rt)
-
-    return queue_data
-
-def apply_log_scale(ax, values, queue_name):
-    """Applica scala logaritmica se i valori sono grandi o se è InValutazione"""
-    if not values:
-        return
-    
-
-# 🔑 Mappa hardcoded file → seed
+# 🔑 Mappa hardcoded file → seed (solo per label in legenda)
 REPLICA_SEEDS = {
     "daily_stats_rep0.json": 123456789,
     "daily_stats_rep1.json": 1049824841,
@@ -56,119 +16,758 @@ REPLICA_SEEDS = {
     "daily_stats_rep6.json": 752455240,
 }
 
-def plot_comparison_chart(queue_name, replica_data, output_dir, replica_seeds):
+# ✅ smoothing (metti 1 per “reale”)
+SYSTEM_SMOOTH_WINDOW = 1  # response_system_timeseries (per giorno)
+INVAL_SMOOTH_WINDOW = 1   # invalutazione REAL bucket-wise (per bucket)
+
+
+# =========================
+# IO
+# =========================
+def load_stats_data(filename, drop_last_n=10):
+    """
+    Carica JSON-lines dal file e scarta le ultime `drop_last_n` righe (non vuote).
+    """
+    with open(filename, "r", encoding="utf-8") as f:
+        lines = [line for line in f if line.strip()]
+
+    if drop_last_n and len(lines) > drop_last_n:
+        lines = lines[:-drop_last_n]
+    elif drop_last_n and len(lines) <= drop_last_n:
+        lines = []
+
+    return [json.loads(line) for line in lines]
+
+
+# =========================
+# LOG SCALE
+# =========================
+def apply_log_scale(ax, values, series_name=""):
+    if not values:
+        return
+    vmax = max(values)
+    if vmax > 1e5 or series_name.lower() in {
+        "invalutazione", "exec_totale", "response_totale", "response_system",
+        "invalutazionepesante", "invalutazionediretta", "invalutazioneleggera"
+    }:
+        ax.set_yscale("log")
+        positives = [v for v in values if v > 0]
+        if positives:
+            vmin = min(positives)
+            ax.set_ylim(bottom=max(0.01, vmin / 10))
+
+
+# =========================
+# ESTRAZIONE PER-CODA (bucket) + (opzionale) split medie InValutazione per priorità
+# =========================
+def extract_queue_data(data, separate_invalutazione_queues=False):
+    """
+    Estrae dati per-coda:
+    - queue_time (bucket)
+    - executing_time (bucket)
+    - queue_lenght (bucket)
+    - response_time (bucket): qt+et
+
+    Se separate_invalutazione_queues=True:
+    aggiunge anche 3 "code" fittizie:
+      - InValutazioneDiretta
+      - InValutazioneLeggera
+      - InValutazionePesante
+    usando i valori medi giornalieri (NON bucket) presenti nei dict top-level.
+    """
+    queue_data = defaultdict(
+        lambda: {
+            "queue_times": [],
+            "execution_times": [],
+            "queue_lengths": [],
+            "response_times": [],
+        }
+    )
+
+    for entry in data:
+        if entry.get("type") != "daily_summary":
+            continue
+
+        stats = entry.get("stats", {})
+        for queue_name, queue_stats in stats.items():
+
+            # --- Split per priorità (medie per giorno), se richiesto
+            if queue_name == "InValutazione" and separate_invalutazione_queues:
+                visited = queue_stats.get("visited", {})
+                if isinstance(visited, dict):
+                    for priority in ["Diretta", "Leggera", "Pesante"]:
+                        if priority not in visited:
+                            continue
+
+                        separate_name = f"InValutazione{priority}"
+                        qt_val = float(queue_stats.get("queue_time", {}).get(priority, 0.0) or 0.0)
+                        et_val = float(queue_stats.get("executing_time", {}).get(priority, 0.0) or 0.0)
+                        ql_val = float(queue_stats.get("queue_lenght", {}).get(priority, 0.0) or 0.0)
+
+                        # qui appendiamo 1 valore per giorno
+                        queue_data[separate_name]["queue_times"].append(qt_val)
+                        queue_data[separate_name]["execution_times"].append(et_val)
+                        queue_data[separate_name]["queue_lengths"].append(ql_val)
+                        queue_data[separate_name]["response_times"].append(qt_val + et_val)
+
+            # --- Estrazione bucket-wise "normale"
+            if "data" not in queue_stats:
+                continue
+
+            d = queue_stats["data"]
+            qt = d.get("queue_time", []) or []
+            et = d.get("executing_time", []) or []
+            ql = d.get("queue_lenght", []) or []
+
+            qt = [float(x) for x in qt]
+            et = [float(x) for x in et]
+            ql = [float(x) for x in ql]
+
+            rt = [q + e for q, e in zip(qt, et)] if qt and et and len(qt) == len(et) else []
+
+            queue_data[queue_name]["queue_times"].extend(qt)
+            queue_data[queue_name]["execution_times"].extend(et)
+            queue_data[queue_name]["queue_lengths"].extend(ql)
+            queue_data[queue_name]["response_times"].extend(rt)
+
+    return queue_data
+
+
+# =========================
+# TOTALI (bucket)
+# =========================
+def extract_total_metric_series(data, metric_key="executing_time"):
+    total_series = []
+    for entry in data:
+        if entry.get("type") != "daily_summary":
+            continue
+
+        stats = entry.get("stats", {})
+        day_lists = []
+        for _, qstats in stats.items():
+            d = qstats.get("data", {})
+            lst = d.get(metric_key, [])
+            if lst:
+                day_lists.append(lst)
+
+        if not day_lists:
+            continue
+
+        maxlen = max(len(lst) for lst in day_lists)
+        day_sum = [0.0] * maxlen
+        for lst in day_lists:
+            for i, v in enumerate(lst):
+                day_sum[i] += float(v)
+
+        total_series.extend(day_sum)
+
+    return total_series
+
+
+def extract_total_response_series(data):
+    total_rt = []
+    for entry in data:
+        if entry.get("type") != "daily_summary":
+            continue
+
+        stats = entry.get("stats", {})
+        qt_lists, et_lists = [], []
+
+        for _, qstats in stats.items():
+            d = qstats.get("data", {})
+            qt = d.get("queue_time", [])
+            et = d.get("executing_time", [])
+            if qt:
+                qt_lists.append(qt)
+            if et:
+                et_lists.append(et)
+
+        if not qt_lists and not et_lists:
+            continue
+
+        maxlen = 0
+        if qt_lists:
+            maxlen = max(maxlen, max(len(x) for x in qt_lists))
+        if et_lists:
+            maxlen = max(maxlen, max(len(x) for x in et_lists))
+
+        if maxlen == 0:
+            continue
+
+        qt_sum = [0.0] * maxlen
+        et_sum = [0.0] * maxlen
+
+        for lst in qt_lists:
+            for i, v in enumerate(lst):
+                qt_sum[i] += float(v)
+
+        for lst in et_lists:
+            for i, v in enumerate(lst):
+                et_sum[i] += float(v)
+
+        total_rt.extend([q + e for q, e in zip(qt_sum, et_sum)])
+
+    return total_rt
+
+
+# =========================
+# SYSTEM per giorno (pesato)
+# =========================
+def extract_system_response_per_day(data):
+    series = []
+    for entry in data:
+        if entry.get("type") != "daily_summary":
+            continue
+
+        stats = entry.get("stats", {})
+        num, den = 0.0, 0.0
+
+        for _, qstats in stats.items():
+            visited = qstats.get("visited", 0)
+
+            if isinstance(visited, dict):
+                for prio, v in visited.items():
+                    if v is None or v <= 0:
+                        continue
+                    qt = float(qstats.get("queue_time", {}).get(prio, 0.0) or 0.0)
+                    et = float(qstats.get("executing_time", {}).get(prio, 0.0) or 0.0)
+                    num += (qt + et) * v
+                    den += v
+            else:
+                if visited is None or visited <= 0:
+                    continue
+                qt = float(qstats.get("queue_time", 0.0) or 0.0)
+                et = float(qstats.get("executing_time", 0.0) or 0.0)
+                num += (qt + et) * visited
+                den += visited
+
+        if den > 0:
+            series.append(num / den)
+
+    return series
+
+
+# =========================
+# ✅ INVALUTAZIONE REAL (bucket-wise) -> queue+exec presi da stats["InValutazione"]["data"]
+# =========================
+def extract_invalutazione_response_series_from_json(data):
+    """
+    Costruisce una serie concatenata (giorni in ordine) con:
+      InValutazione_response_bucket = queue_time_bucket + executing_time_bucket
+    usando SOLO stats["InValutazione"]["data"].
+    """
+    out = []
+    for entry in data:
+        if entry.get("type") != "daily_summary":
+            continue
+        stats = entry.get("stats", {})
+        inv = stats.get("InValutazione", {})
+        d = inv.get("data", {})
+        qt = d.get("queue_time", []) or []
+        et = d.get("executing_time", []) or []
+        if not qt or not et:
+            continue
+        m = min(len(qt), len(et))
+        out.extend([float(qt[i]) + float(et[i]) for i in range(m)])
+    return out
+
+
+# =========================
+# PLOT: per-coda (attesa + confronto + response vecchio stile)
+# =========================
+def plot_comparison_chart(queue_name, replica_data, output_dir):
     fig, ax = plt.subplots(figsize=(10, 6))
     ax.set_title(f"{queue_name} - Confronto tra repliche (tempo medio di attesa)")
     ax.set_xlabel("Replica")
     ax.set_ylabel("Tempo Medio di Attesa (s)")
-    means = [(rep, np.mean(times)) for rep, times in replica_data.items() if times]
+
+    means = [(rep, float(np.mean(times))) for rep, times in replica_data.items() if times]
     means.sort()
     if not means:
+        plt.close()
         return
+
     labels, values = zip(*means)
-    # Simplified labels without seeds
     bar_labels = [f"Rep {i}" for i in range(len(labels))]
-    ax.bar(bar_labels, values, color='skyblue')
-    apply_log_scale(ax, values, queue_name)
+
+    ax.bar(bar_labels, values)
+    apply_log_scale(ax, list(values), queue_name)
     ax.grid(True, alpha=0.3)
+
     plt.xticks(rotation=45)
     plt.tight_layout()
-    plt.savefig(f"{output_dir}/confronto_{queue_name.lower()}.jpg", dpi=150, bbox_inches='tight')
+    plt.savefig(os.path.join(output_dir, f"confronto_{queue_name.lower()}.jpg"), dpi=150, bbox_inches="tight")
     plt.close()
 
-def plot_response_time_averages(queue_name, queue, exec, output_dir, replica_seeds):
-    fig, ax = plt.subplots(figsize=(10, 6))
-    ax.set_title(f"{queue_name} - Tempi di Risposta (Queue Time + Exec Time)")
-    ax.set_xlabel("Evento #")
-    ax.set_ylabel("Tempo di Risposta (s)")
-    all_vals = []
-    replica_count = 0
-    for label in sorted(queue.keys()):
-        q_times = queue[label]
-        e_times = exec[label]
-        if len(q_times) < 10 or len(e_times) < 10:
-            continue
-        exec_moving = pd.Series(e_times).rolling(window=1000, min_periods=1).mean().tolist()
-        response_times = [q + e for q, e in zip(q_times, exec_moving)]
-        moving_avg = pd.Series(response_times).rolling(window=100, min_periods=1).mean()
-        ax.plot(moving_avg, linewidth=0.8, alpha=0.7)  # Remove individual replica labels
-        all_vals.extend(response_times)
-        replica_count += 1
-    if all_vals:
-        # Calculate mean using all data
-        mean_val = np.mean(all_vals)
-        ax.axhline(mean_val, color='red', linestyle='--', label=f"Mean: {mean_val:.2f}", linewidth=1)
-    apply_log_scale(ax, all_vals, queue_name)
-    ax.grid(True, alpha=0.3)
-    ax.legend()  # Only shows the mean line now
-    plt.tight_layout()
-    plt.savefig(f"{output_dir}/tempi_di_risposta_{queue_name.lower()}.jpg", dpi=150, bbox_inches='tight')
-    plt.close()
 
-def plot_aggregated_averages(queue_name, data, output_dir, replica_seeds):
+def plot_aggregated_averages(queue_name, data, output_dir):
     fig, ax = plt.subplots(figsize=(10, 6))
     ax.set_title(f"{queue_name} - Tempi di Attesa (tutte le repliche)")
     ax.set_xlabel("Evento #")
     ax.set_ylabel("Tempo di Attesa (s)")
-    replica_count = 0
+
     for label in sorted(data.keys()):
         q_times = data[label]
         if len(q_times) < 10:
             continue
-        moving_avg = pd.Series(q_times).rolling(window=max(10, len(q_times)//50)).mean()
-        ax.plot(moving_avg, alpha=0.7)  # Remove individual replica labels
-        replica_count += 1
-    
-    # Calculate and show overall mean
+        moving_avg = pd.Series(q_times).rolling(window=max(10, len(q_times) // 50), min_periods=1).mean()
+        ax.plot(moving_avg, alpha=0.7)
+
     all_values = [v for arr in data.values() for v in arr if arr]
     if all_values:
-        overall_mean = np.mean(all_values)
-        ax.axhline(overall_mean, color='red', linestyle='--', label=f"Mean: {overall_mean:.2f}", linewidth=1)
-    
-    apply_log_scale(ax, [v for arr in data.values() for v in arr], queue_name)
+        apply_log_scale(ax, all_values, queue_name)
+
     ax.grid(True, alpha=0.3)
-    ax.legend()  # Only shows the mean line now
     plt.tight_layout()
-    plt.savefig(f"{output_dir}/tempi_attesa_{queue_name.lower()}.jpg", dpi=150, bbox_inches='tight')
+    plt.savefig(os.path.join(output_dir, f"tempi_attesa_{queue_name.lower()}.jpg"), dpi=150, bbox_inches="tight")
     plt.close()
 
-def analyze_transient_analysis_directory(transient_dir="../../src/transient_analysis_json", output_dir="graphs/transient_avg"):
+
+def plot_response_time_averages(queue_name, queue, exec_times, output_dir):
+    """
+    Versione “vecchia”: usa smoothing forte su exec e poi response.
+    La lasciamo perché era nella prima pipeline.
+    """
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.set_title(f"{queue_name} - Tempi di Risposta (Queue Time + Exec Time)")
+    ax.set_xlabel("Evento #")
+    ax.set_ylabel("Tempo di Risposta (s)")
+
+    all_vals = []
+
+    for label in sorted(queue.keys()):
+        q_times = queue[label]
+        e_times = exec_times[label]
+        if len(q_times) < 10 or len(e_times) < 10:
+            continue
+
+        exec_moving = pd.Series(e_times).rolling(window=1000, min_periods=1).mean().tolist()
+        response_times = [q + e for q, e in zip(q_times, exec_moving)]
+        moving_avg = pd.Series(response_times).rolling(window=100, min_periods=1).mean()
+
+        ax.plot(moving_avg, linewidth=0.8, alpha=0.7)
+        all_vals.extend(response_times)
+
+    if all_vals:
+        mean_val = float(np.mean(all_vals))
+        ax.axhline(mean_val, linestyle="--", label=f"Mean: {mean_val:.2f}", linewidth=1)
+        apply_log_scale(ax, all_vals, queue_name)
+
+    ax.grid(True, alpha=0.3)
+    ax.legend()
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, f"tempi_di_risposta_{queue_name.lower()}_smoothed.jpg"), dpi=150, bbox_inches="tight")
+    plt.close()
+
+
+# =========================
+# PLOT: EXEC/RESPONSE TOTALI (confronto + timeseries)
+# =========================
+def plot_total_exec_comparison(replica_total_exec, output_dir):
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.set_title("EXEC TOTALE (tutte le code) - Confronto tra repliche")
+    ax.set_xlabel("Replica")
+    ax.set_ylabel("Tempo Medio di Esecuzione Totale (s)")
+
+    means = [(rep, float(np.mean(vals))) for rep, vals in replica_total_exec.items() if vals]
+    means.sort()
+    if not means:
+        plt.close()
+        return
+
+    labels, values = zip(*means)
+    bar_labels = [f"Rep {i}" for i in range(len(labels))]
+
+    ax.bar(bar_labels, values)
+    apply_log_scale(ax, list(values), "exec_totale")
+    ax.grid(True, alpha=0.3)
+
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, "confronto_exec_totale.jpg"), dpi=150, bbox_inches="tight")
+    plt.close()
+
+
+def plot_total_exec_timeseries(replica_total_exec, output_dir):
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.set_title("EXEC TOTALE (tutte le code) - Andamento per repliche")
+    ax.set_xlabel("Bucket #")
+    ax.set_ylabel("Tempo di Esecuzione Totale (s)")
+
+    all_vals = []
+    for rep in sorted(replica_total_exec.keys()):
+        series = replica_total_exec[rep]
+        if len(series) < 10:
+            continue
+        moving = pd.Series(series).rolling(window=max(50, len(series) // 100), min_periods=1).mean()
+        ax.plot(moving, alpha=0.7, linewidth=0.8)
+        all_vals.extend(series)
+
+    if all_vals:
+        mean_val = float(np.mean(all_vals))
+        ax.axhline(mean_val, linestyle="--", label=f"Mean: {mean_val:.2f}", linewidth=1)
+        apply_log_scale(ax, all_vals, "exec_totale")
+
+    ax.grid(True, alpha=0.3)
+    ax.legend()
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, "tempi_exec_totale.jpg"), dpi=150, bbox_inches="tight")
+    plt.close()
+
+
+def plot_total_response_comparison(replica_total_rt, output_dir):
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.set_title("RESPONSE TIME TOTALE (tutte le code) - Confronto tra repliche")
+    ax.set_xlabel("Replica")
+    ax.set_ylabel("Tempo Medio di Risposta Totale (s)")
+
+    means = [(rep, float(np.mean(vals))) for rep, vals in replica_total_rt.items() if vals]
+    means.sort()
+    if not means:
+        plt.close()
+        return
+
+    labels, values = zip(*means)
+    bar_labels = [f"Rep {i}" for i in range(len(labels))]
+
+    ax.bar(bar_labels, values)
+    apply_log_scale(ax, list(values), "response_totale")
+    ax.grid(True, alpha=0.3)
+
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, "confronto_response_totale.jpg"), dpi=150, bbox_inches="tight")
+    plt.close()
+
+
+def plot_total_response_timeseries(replica_total_rt, output_dir):
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.set_title("RESPONSE TIME TOTALE (tutte le code) - Andamento per repliche")
+    ax.set_xlabel("Bucket #")
+    ax.set_ylabel("Tempo di Risposta Totale (s)")
+
+    all_vals = []
+    for rep in sorted(replica_total_rt.keys()):
+        series = replica_total_rt[rep]
+        if len(series) < 10:
+            continue
+        moving = pd.Series(series).rolling(window=max(50, len(series) // 100), min_periods=1).mean()
+        ax.plot(moving, alpha=0.7, linewidth=0.8)
+        all_vals.extend(series)
+
+    if all_vals:
+        mean_val = float(np.mean(all_vals))
+        ax.axhline(mean_val, linestyle="--", label=f"Mean: {mean_val:.2f}", linewidth=1)
+        apply_log_scale(ax, all_vals, "response_totale")
+
+    ax.grid(True, alpha=0.3)
+    ax.legend()
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, "tempi_response_totale.jpg"), dpi=150, bbox_inches="tight")
+    plt.close()
+
+
+# =========================
+# CSV export (totali per bucket)
+# =========================
+def save_system_timeseries(total_exec_by_replica, total_rt_by_replica, output_dir,
+                           filename="system_times_per_event.csv"):
+    rows = []
+    for rep, exec_series in total_exec_by_replica.items():
+        rt_series = total_rt_by_replica.get(rep, [])
+        max_len = max(len(exec_series), len(rt_series))
+        for idx in range(max_len):
+            exec_val = float(exec_series[idx]) if idx < len(exec_series) else np.nan
+            rt_val = float(rt_series[idx]) if idx < len(rt_series) else np.nan
+            rows.append({
+                "replica": rep,
+                "bucket": idx,
+                "exec_total": exec_val,
+                "response_total": rt_val
+            })
+
+    if not rows:
+        print("Nessun dato per esportare le serie totali.")
+        return None
+
+    df = pd.DataFrame(rows)
+    out_path = os.path.join(output_dir, filename)
+    df.to_csv(out_path, index=False)
+    print(f"📄 Serie per-evento (exec + response) salvate in: {out_path}")
+    return out_path
+
+
+# =========================
+# Bande mean ± std (totali / inval / etc.)
+# =========================
+def _plot_aggregate_band(series_by_replica, title, ylabel, output_path, window=200):
+    max_len = max((len(v) for v in series_by_replica.values()), default=0)
+    if max_len == 0:
+        print(f"Nessun dato per {title}, salto il plot.")
+        return
+
+    aligned = []
+    for series in series_by_replica.values():
+        padded = list(series) + [np.nan] * (max_len - len(series))
+        aligned.append(padded)
+
+    arr = np.array(aligned, dtype=float)
+    mean = np.nanmean(arr, axis=0)
+    std = np.nanstd(arr, axis=0)
+
+    mean_smooth = pd.Series(mean).rolling(window=window, min_periods=1).mean()
+    std_smooth = pd.Series(std).rolling(window=window, min_periods=1).mean()
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.set_title(title)
+    ax.set_xlabel("Bucket #")
+    ax.set_ylabel(ylabel)
+
+    x = np.arange(max_len)
+    ax.plot(x, mean_smooth, label="Media", linewidth=1.0)
+    ax.fill_between(x, mean_smooth - std_smooth, mean_smooth + std_smooth, alpha=0.15, label="±1 STD")
+
+    ax.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.legend()
+    plt.savefig(output_path, dpi=150, bbox_inches="tight")
+    plt.close()
+
+
+# =========================
+# SYSTEM per giorno (asse X rimosso, poco smoothing)
+# =========================
+def plot_system_response_timeseries(system_rt_by_replica, output_dir):
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.set_title("TEMPO DI RISPOSTA MEDIO DI SISTEMA (per giorno)")
+    ax.set_ylabel("Tempo medio di risposta (s)")
+
+    ax.set_xlabel("")
+    ax.set_xticks([])
+    ax.tick_params(axis="x", which="both", bottom=False, top=False, labelbottom=False)
+
+    all_vals = []
+
+    for rep in sorted(system_rt_by_replica.keys()):
+        series = system_rt_by_replica[rep]
+        if len(series) < 2:
+            continue
+
+        if SYSTEM_SMOOTH_WINDOW and SYSTEM_SMOOTH_WINDOW > 1:
+            y = pd.Series(series).rolling(window=SYSTEM_SMOOTH_WINDOW, min_periods=1).mean().tolist()
+        else:
+            y = series
+
+        seed = REPLICA_SEEDS.get(rep, "Unknown")
+        ax.plot(
+            y,
+            linewidth=0.9,
+            alpha=0.85,
+            marker=".",
+            markersize=3,
+            label=f"Seed: {seed}",
+        )
+        all_vals.extend(series)
+
+    if all_vals:
+        apply_log_scale(ax, all_vals, "response_system")
+
+    ax.grid(True, alpha=0.3)
+    ax.legend()
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, "response_system_timeseries.jpg"), dpi=150, bbox_inches="tight")
+    plt.close()
+
+
+# =========================
+# ✅ INVALUTAZIONE REAL plots
+# =========================
+def plot_invalutazione_response_timeseries(inval_rt_by_replica, output_dir):
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.set_title("INVALUTAZIONE - Response Time REAL (queue+exec) [bucket JSON]")
+    ax.set_xlabel("Bucket #")
+    ax.set_ylabel("Tempo di risposta (s)")
+
+    all_vals = []
+    for rep in sorted(inval_rt_by_replica.keys()):
+        series = inval_rt_by_replica[rep]
+        if len(series) < 10:
+            continue
+
+        win = max(1, int(INVAL_SMOOTH_WINDOW))
+        if win > 1:
+            y = pd.Series(series).rolling(window=win, min_periods=1).mean().tolist()
+        else:
+            y = series
+
+        seed = REPLICA_SEEDS.get(rep, "Unknown")
+        ax.plot(y, linewidth=0.8, alpha=0.85, label=f"Seed: {seed}")
+        all_vals.extend(series)
+
+    if all_vals:
+        apply_log_scale(ax, all_vals, "invalutazione")
+
+    ax.grid(True, alpha=0.3)
+    ax.legend()
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, "invalutazione_response_real_timeseries.jpg"), dpi=150, bbox_inches="tight")
+    plt.close()
+
+
+def plot_invalutazione_response_comparison(inval_rt_by_replica, output_dir):
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.set_title("INVALUTAZIONE - Response Time REAL (queue+exec) Confronto tra repliche")
+    ax.set_xlabel("Replica")
+    ax.set_ylabel("Tempo medio di risposta (s)")
+
+    means = [(rep, float(np.mean(vals))) for rep, vals in inval_rt_by_replica.items() if vals]
+    means.sort()
+    if not means:
+        plt.close()
+        return
+
+    labels, values = zip(*means)
+    bar_labels = [f"Rep {i}" for i in range(len(labels))]
+
+    ax.bar(bar_labels, values)
+    apply_log_scale(ax, list(values), "invalutazione")
+    ax.grid(True, alpha=0.3)
+
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, "invalutazione_response_real_confronto.jpg"), dpi=150, bbox_inches="tight")
+    plt.close()
+
+
+def plot_invalutazione_response_mean_band(inval_rt_by_replica, output_dir, window=200):
+    _plot_aggregate_band(
+        inval_rt_by_replica,
+        title="INVALUTAZIONE REAL - Media per bucket su tutte le repliche (queue+exec)",
+        ylabel="Tempo di risposta (s)",
+        output_path=os.path.join(output_dir, "invalutazione_response_real_media.jpg"),
+        window=window,
+    )
+
+
+# =========================
+# MAIN MERGED
+# =========================
+def analyze_transient_analysis_directory(
+    transient_dir="../../src/transient_analysis_json",
+    output_dir="graphs/transient_avg",
+    drop_last_n=10,
+    separate_invalutazione_queues=False
+):
     if not os.path.exists(transient_dir):
         print(f"Directory {transient_dir}/ non trovata.")
         return
 
-    json_files = [f for f in os.listdir(transient_dir)
-                  if f.startswith("daily_stats_rep") and f.endswith(".json")]
+    json_files = [
+        f for f in os.listdir(transient_dir)
+        if f.startswith("daily_stats_rep") and f.endswith(".json")
+    ]
+
     if not json_files:
         print(f"Nessun file daily_stats_rep*.json trovato in {transient_dir}/")
         return
 
     print(f"\n📊 Analisi transitoria: trovati {len(json_files)} file in {transient_dir}/")
-
-    all_queue_times = defaultdict(lambda: defaultdict(list))
-    all_response_times = defaultdict(lambda: defaultdict(list))
-    all_exec_times = defaultdict(lambda: defaultdict(list))
-    for file in json_files:
-        path = os.path.join(transient_dir, file)
-        fname = os.path.basename(file)
-        print(f"  Caricamento {fname} ...")
-        data = load_stats_data(path)
-        queue_data = extract_queue_data(data)
-
-        for queue_name, q_data in queue_data.items():
-            all_queue_times[queue_name][fname] = q_data['queue_times']
-            all_response_times[queue_name][fname] = q_data['response_times']
-            all_exec_times[queue_name][fname] = q_data['execution_times']
+    print(f"🧹 Scarto ultime {drop_last_n} righe per file (se presenti)\n")
 
     os.makedirs(output_dir, exist_ok=True)
 
+    # --- Come prima
+    all_queue_times = defaultdict(lambda: defaultdict(list))
+    all_exec_times = defaultdict(lambda: defaultdict(list))
+
+    total_exec_by_replica = defaultdict(list)
+    total_rt_by_replica = defaultdict(list)
+    system_rt_by_replica = defaultdict(list)
+
+    # --- Come seconda: InValutazione REAL
+    inval_rt_by_replica = defaultdict(list)
+
+    for file in sorted(json_files):
+        path = os.path.join(transient_dir, file)
+        fname = os.path.basename(file)
+        print(f" Caricamento {fname} ...")
+
+        data = load_stats_data(path, drop_last_n=drop_last_n)
+
+        # per-coda (bucket) + optional split
+        queue_data = extract_queue_data(data, separate_invalutazione_queues=separate_invalutazione_queues)
+        for queue_name, q_data in queue_data.items():
+            all_queue_times[queue_name][fname] = q_data["queue_times"]
+            all_exec_times[queue_name][fname] = q_data["execution_times"]
+
+        # totali
+        total_exec_by_replica[fname] = extract_total_metric_series(data, metric_key="executing_time")
+        total_rt_by_replica[fname] = extract_total_response_series(data)
+
+        # system per giorno
+        system_rt_by_replica[fname] = extract_system_response_per_day(data)
+
+        # ✅ InValutazione REAL (bucket JSON)
+        inval_rt_by_replica[fname] = extract_invalutazione_response_series_from_json(data)
+
+    # =========================
+    # PER-CODA (prima pipeline)
+    # =========================
     for queue_name in all_queue_times:
         print(f"\n🔍 Analisi per la coda: {queue_name}")
-        plot_aggregated_averages(queue_name, all_queue_times[queue_name], output_dir, REPLICA_SEEDS)
-        plot_comparison_chart(queue_name, all_queue_times[queue_name], output_dir, REPLICA_SEEDS)
-        plot_response_time_averages(queue_name, all_queue_times[queue_name], all_exec_times[queue_name], output_dir, REPLICA_SEEDS)
-        
+        plot_aggregated_averages(queue_name, all_queue_times[queue_name], output_dir)
+        plot_comparison_chart(queue_name, all_queue_times[queue_name], output_dir)
+        plot_response_time_averages(queue_name, all_queue_times[queue_name], all_exec_times[queue_name], output_dir)
+
+    # =========================
+    # TOTALI (prima pipeline)
+    # =========================
+    print(f"\n🧮 Analisi EXEC TOTALE (somma su tutte le code)")
+    plot_total_exec_comparison(total_exec_by_replica, output_dir)
+    plot_total_exec_timeseries(total_exec_by_replica, output_dir)
+
+    print(f"\n🧮 Analisi RESPONSE TIME TOTALE (Queue+Exec, somma su tutte le code)")
+    plot_total_response_comparison(total_rt_by_replica, output_dir)
+    plot_total_response_timeseries(total_rt_by_replica, output_dir)
+
+    # =========================
+    # SYSTEM per giorno (prima pipeline)
+    # =========================
+    print(f"\n🧮 Analisi TEMPO DI RISPOSTA MEDIO DI SISTEMA (per giorno)")
+    plot_system_response_timeseries(system_rt_by_replica, output_dir)
+
+    save_system_timeseries(total_exec_by_replica, total_rt_by_replica, output_dir)
+
+    _plot_aggregate_band(
+        total_exec_by_replica,
+        title="EXEC TOTALE - Media per bucket su tutte le repliche",
+        ylabel="Tempo di esecuzione totale (s)",
+        output_path=os.path.join(output_dir, "exec_totale_media.jpg"),
+        window=200,
+    )
+
+    _plot_aggregate_band(
+        total_rt_by_replica,
+        title="RESPONSE TOTALE - Media per bucket su tutte le repliche",
+        ylabel="Tempo di risposta totale (s)",
+        output_path=os.path.join(output_dir, "response_totale_media.jpg"),
+        window=200,
+    )
+
+    # =========================
+    # ✅ INVALUTAZIONE REAL (seconda pipeline)
+    # =========================
+    print(f"\n🧪 Analisi INVALUTAZIONE REAL (queue+exec) usando bucket JSON")
+    plot_invalutazione_response_timeseries(inval_rt_by_replica, output_dir)
+    plot_invalutazione_response_comparison(inval_rt_by_replica, output_dir)
+    plot_invalutazione_response_mean_band(inval_rt_by_replica, output_dir, window=200)
+
     print(f"\n✅ Analisi completata. Grafici salvati in: {output_dir}/")
 
+
 if __name__ == "__main__":
-    analyze_transient_analysis_directory()
+    # metti True se vuoi anche InValutazioneDiretta/Leggera/Pesante (medie giornaliere)
+    analyze_transient_analysis_directory(
+        separate_invalutazione_queues=False,
+        drop_last_n=10
+    )

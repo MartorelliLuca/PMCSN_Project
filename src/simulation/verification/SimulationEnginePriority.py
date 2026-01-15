@@ -66,14 +66,19 @@ class SimulationEngine:
         rate = float(data["arrival_rate"])
         return [rate] * 300
 
-    def getArrivalsRates(self) -> list[float]:
-        conf_path = self._get_conf_path("dataset_arrivals.json")
+    def getArrivalsRates(self, n_replicas=1, folder="default_arrivals") -> list[float]:
+        conf_path = Path(__file__).resolve().parents[3] / "conf" / "arrival_rate.json"
+
         if not conf_path.exists():
             raise FileNotFoundError(f"File non trovato: {conf_path}")
+
         with conf_path.open("r", encoding="utf-8") as f:
             data = json.load(f)
-        days = data.get("days", [])
-        return [float(day["lambda_per_sec"]) for day in days if "lambda_per_sec" in day]
+
+
+        rates = []
+   
+        return [data["arrival_rate"]]*200
 
     def buildBlocks(self):
         cfg_path = self._get_conf_path("inputVerif2.json")
@@ -394,10 +399,12 @@ class SimulationEngine:
                     se = sqrt(var_sim / k_eff)
                     tcrit = getStudent(k_eff)
                     ci = (mean_sim - tcrit * se, mean_sim + tcrit * se)
+                    half_width = (ci[1] - ci[0]) / 2
+                    rho1 = stats[key].get("autocorr_1", None)
                 else:
                     mean_sim = None
                     ci = (None, None)
-
+                
                 # 🔹 Accumula solo tempi di risposta
                 if metric == "response_time":
                     total_theo += theo_val if theo_val is not None else 0.0
@@ -413,6 +420,8 @@ class SimulationEngine:
                     f"{theo_val:.4f}" if theo_val is not None else "-",
                     f"{mean_sim:.4f}" if mean_sim is not None else "-",
                     f"[{ci[0]:.4f}, {ci[1]:.4f}]" if mean_sim is not None else "-",
+                    f"±{half_width:.4f}" if mean_sim is not None else "-",
+                    f"{rho1:.4f}" if rho1 is not None else "-",
                     "✅" if check else "❌"
                 ])
 
@@ -429,7 +438,7 @@ class SimulationEngine:
             print(f"\n📌 Servizio: {service}")
             print(tabulate(
                 metrics,
-                headers=["Metrica", "Teorico", "Simulato", "95% CI", "Coerente?"],
+                headers=["Metrica", "Teorico", "Simulato", "95% CI","Semi-Ampiezza","Autocorrelazione", "Coerente?"],
                 tablefmt="fancy_grid"
             ))
         
