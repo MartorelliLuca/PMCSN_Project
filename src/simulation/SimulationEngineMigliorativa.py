@@ -177,9 +177,7 @@ class SimulationEngine:
                     else:
                         base = rate
                     
-                    generated = self.generateLambda_low_var(base_rate=base, cv=0.18, clip=(0.6, 1.6))
-                    #generated = self.generateLambda_ultra_low_var(base_rate=base, delta=0.08, k=80)
-
+                    generated = base
                     rates.append(generated)
                     writer.writerow([month, i + 1, generated])
 
