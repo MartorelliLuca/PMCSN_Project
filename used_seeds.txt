@@ -16,3 +16,5 @@ Replica 1: seed = 3
 Replica 2: seed = 396774045
 Replica 3: seed = 79716670
 Replica 1: seed = 3
+Replica 1: seed = 3
+Replica 1: seed = 3
