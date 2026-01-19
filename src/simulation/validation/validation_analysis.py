@@ -10,10 +10,8 @@ from datetime import datetime
 # ======================================================
 # PATH FILE JSON (CAMBIA SOLO QUESTO SE SERVE)
 # ======================================================
-path = (
-    "/Users/giuliaboccuccia/Documents/PMCSN/"
-    "PMCSN_Project/src/finite_horizon_json_migliorativo/"
-    "daily_stats_rep0.json"
+path = ("/home/giulia/Documenti/PM_project/PMCSN_Project/src/finite_horizon_json_migliorativo/daily_stats_rep0.json"
+    #"/Users/giuliaboccuccia/Documents/PMCSN/PMCSN_Project/src/finite_horizon_json_migliorativo/daily_stats_rep0.json"
 )
 
 # ======================================================
@@ -166,7 +164,7 @@ for cls in df_classes["class"].unique():
     plt.plot(sub["date"], sub["Wq"], label=cls)
 
 plt.yscale("log")
-plt.title("InValutazione – Tempo medio in coda per classe")
+plt.title("Valutazione Pratiche – Tempo medio in coda per classe")
 plt.xlabel("Tempo")
 plt.ylabel("Secondi")
 plt.legend()
@@ -182,7 +180,7 @@ for cls in df_classes["class"].unique():
     plt.plot(sub["date"], sub["R"], label=cls)
 
 plt.yscale("log")
-plt.title("InValutazione – Tempo medio di risposta per classe")
+plt.title("Valutazione Pratiche – Tempo medio di risposta per classe")
 plt.xlabel("Tempo")
 plt.ylabel("Secondi")
 plt.legend()
