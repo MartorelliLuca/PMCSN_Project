@@ -1,16 +1,10 @@
-
-
-
-
 import json
 import pandas as pd
 import matplotlib.pyplot as plt
 from datetime import datetime
 
-# ======================================================
-# PATH FILE JSON (CAMBIA SOLO QUESTO SE SERVE)
-# ======================================================
-path = ("/home/giulia/Documenti/PM_project/PMCSN_Project/src/finite_horizon_json_migliorativo/daily_stats_rep0.json"
+path = ("/Users/giuliaboccuccia/Documents/PMCSN/PMCSN_Project/src/finite_horizon_json_migliorativo/daily_stats_rep0.json"
+    #"/home/giulia/Documenti/PM_project/PMCSN_Project/src/finite_horizon_json_migliorativo/daily_stats_rep0.json"
     #"/Users/giuliaboccuccia/Documents/PMCSN/PMCSN_Project/src/finite_horizon_json_migliorativo/daily_stats_rep0.json"
 )
 
