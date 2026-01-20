@@ -16,7 +16,7 @@ from simulation.blocks.EndBlockModificato import EndBlockModificato
 
 
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 import json
 
 monthDays={
@@ -32,30 +32,27 @@ class SimulationEngine:
     def __init__(self):    
         self.stream=66
 
-    def getArrivalsEqualsRates(self, months: list[str], days_per_month: list[int]) -> list[float]:
-        if len(months) != len(days_per_month):
-            raise ValueError("months e days_per_month devono avere la stessa lunghezza")
-
+    def getArrivalsEqualsRates(self, months: List[str], lengths: List[int]) ->  List[float]:
+        """ Restituisce una lista di tassi giornalieri costruita concatenando blocchi:
+            - months[i] indica la chiave del mese nel JSON
+            - lengths[i] indica quanti giorni ripetere il tasso di quel mese
+        
+        Esempio: months=["may","june"], lengths=[30,50] -> 30 valori col tasso di maggio + 50 col tasso di giugno """
+        if len(months) != len(lengths):
+            raise ValueError("months e lengths devono avere la stessa lunghezza.")
         conf_path = Path(__file__).resolve().parents[2] / "conf" / "months_arrival_rate.json"
         if not conf_path.exists():
             raise FileNotFoundError(f"File non trovato: {conf_path}")
-
-        with conf_path.open("r", encoding="utf-8") as f:
-            data = json.load(f)
-
-        rates = []
-        for m, ndays in zip(months, days_per_month):
-            # prova prima "may", poi "may_arrival_rate"
-            if m in data:
-                rate = float(data[m])
-            elif f"{m}_arrival_rate" in data:
-                rate = float(data[f"{m}_arrival_rate"])
-            else:
-                raise KeyError(f"Mese '{m}' non presente (né '{m}' né '{m}_arrival_rate') in months_arrival_rate.json")
-
-            rates.extend([rate] * int(ndays))
-
-        return rates
+        with conf_path.open("r", encoding="utf-8") as f: data = json.load(f)
+        result: List[float] = []
+        for m, days in zip(months, lengths):
+            if m not in data: 
+                available = ", ".join(sorted(data.keys()))
+                available = ", ".join(sorted(data.keys()))
+                raise KeyError(f"Chiave mese '{m}' non trovata nel JSON. Chiavi disponibili: {available}")
+            rate = float(data[m])
+            result.extend([rate] * int(days))
+        return result
 
     
 

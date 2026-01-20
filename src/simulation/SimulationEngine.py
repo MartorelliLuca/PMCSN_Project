@@ -41,17 +41,48 @@ class SimulationEngine:
         with conf_path.open("r", encoding="utf-8") as f:
             data = json.load(f)
 
-        rates = []
-        for m, ndays in zip(months, days_per_month):
-            # prova prima "may", poi "may_arrival_rate"
-            if m in data:
-                rate = float(data[m])
-            elif f"{m}_arrival_rate" in data:
-                rate = float(data[f"{m}_arrival_rate"])
-            else:
-                raise KeyError(f"Mese '{m}' non presente (né '{m}' né '{m}_arrival_rate') in months_arrival_rate.json")
+        def _get_base_rate(month_key: str) -> float:
+            """
+            Recupera il rate base dal JSON.
+            Supporta anche alias tipo 'may1'/'may2' -> 'may'
+            e fallback su '<month>_arrival_rate'.
+            """
+            # normalizza may1/may2 -> may
+            normalized = month_key
+            if month_key.startswith("may"):
+                normalized = "may"
 
-            rates.extend([rate] * int(ndays))
+            if normalized in data:
+                return float(data[normalized])
+            if f"{normalized}_arrival_rate" in data:
+                return float(data[f"{normalized}_arrival_rate"])
+            raise KeyError(
+                f"Mese '{month_key}' non presente (né '{normalized}' né '{normalized}_arrival_rate') "
+                f"in months_arrival_rate.json"
+            )
+
+        rates: list[float] = []
+        may_day_counter = 0  # conta i giorni di maggio complessivi (attraverso may1 + may2)
+
+        for m, ndays in zip(months, days_per_month):
+            rate = _get_base_rate(m)
+
+            # mese "logico" (may1/may2 vengono considerati may)
+            logical_month = "may" if m.startswith("may") else m
+
+            for i in range(int(ndays)):
+                if logical_month == "may":
+                    # i: indice dentro al blocco corrente; may_day_counter: indice assoluto su maggio
+                    # (così se usi may1 + may2 continua correttamente oltre i 15)
+                    if may_day_counter < 15:
+                        base = rate * 1.2
+                    else:
+                        base = rate * 0.8
+                    may_day_counter += 1
+                else:
+                    base = rate
+
+                rates.append(float(base))
 
         return rates
 
@@ -79,7 +110,7 @@ class SimulationEngine:
             endBlock.setStartBlock(startingBlock)
 
             # Imposta i daily_rates costanti da arrival_rate.json
-            daily_rates = self.getArrivalsEqualsRates(["may", "june"], [31, 190])
+            daily_rates = self.getArrivalsEqualsRates(["may1", "may2"], [15, 110])
             startingBlock.setDailyRates(daily_rates)
 
             # Non spostiamo l'intervallo temporale: ogni replica è una run indipendente

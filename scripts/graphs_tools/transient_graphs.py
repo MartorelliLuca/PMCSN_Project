@@ -442,21 +442,28 @@ def plot_total_response_comparison(replica_total_rt, output_dir):
 
 def plot_total_response_timeseries(replica_total_rt, output_dir):
     fig, ax = plt.subplots(figsize=(10, 6))
-    ax.set_title("RESPONSE TIME TOTALE (tutte le code) - Andamento per repliche")
+    ax.set_title("RESPONSE TIME TOTALE (tutte le code) - Andamento per repliche (MEDIA pesata)")
     ax.set_xlabel("Bucket #")
-    ax.set_ylabel("Tempo di Risposta Totale (s)")
+    ax.set_ylabel("Tempo di risposta medio (s)")  # o (ms) a seconda di ms_to_seconds
 
     all_vals = []
     for rep in sorted(replica_total_rt.keys()):
         series = replica_total_rt[rep]
         if len(series) < 10:
             continue
+
+        # rolling mean
         moving = pd.Series(series).rolling(window=max(50, len(series) // 100), min_periods=1).mean()
-        ax.plot(moving, alpha=0.7, linewidth=0.8)
-        all_vals.extend(series)
+
+        # downsample per non disegnare 50k punti
+        step = max(1, len(moving) // 4000)  # max ~4000 punti
+        y = moving.iloc[::step].to_list()
+
+        ax.plot(y, alpha=0.85, linewidth=0.9, label=rep)
+        all_vals.extend([v for v in series if np.isfinite(v)])
 
     if all_vals:
-        mean_val = float(np.mean(all_vals))
+        mean_val = float(np.nanmean(all_vals))
         ax.axhline(mean_val, linestyle="--", label=f"Mean: {mean_val:.2f}", linewidth=1)
         apply_log_scale(ax, all_vals, "response_totale")
 
@@ -465,6 +472,7 @@ def plot_total_response_timeseries(replica_total_rt, output_dir):
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, "tempi_response_totale.jpg"), dpi=150, bbox_inches="tight")
     plt.close()
+
 
 
 # =========================
@@ -649,6 +657,71 @@ def plot_invalutazione_response_mean_band(inval_rt_by_replica, output_dir, windo
     )
 
 
+def extract_total_response_mean_per_bucket(data, ms_to_seconds=False):
+    """
+    Serie per-bucket del tempo di risposta MEDIO di sistema (queue+exec),
+    calcolato come media pesata sui visited (giornalieri) delle code.
+
+    NOTA: è una media per VISITA (non per job end-to-end), ma con i dati attuali è
+    l'approssimazione più coerente per avere una serie che "si assesta".
+    """
+    out = []
+    for entry in data:
+        if entry.get("type") != "daily_summary":
+            continue
+
+        stats = entry.get("stats", {})
+        if not stats:
+            continue
+
+        # Trova lunghezza bucket del giorno (es. 25)
+        day_bucket_len = None
+        for qstats in stats.values():
+            d = qstats.get("data", {})
+            if d.get("queue_time") and d.get("executing_time"):
+                day_bucket_len = min(len(d["queue_time"]), len(d["executing_time"]))
+                break
+        if not day_bucket_len or day_bucket_len <= 0:
+            continue
+
+        num = [0.0] * day_bucket_len
+        den = [0.0] * day_bucket_len
+
+        for _, qstats in stats.items():
+            d = qstats.get("data", {})
+            qt = d.get("queue_time", []) or []
+            et = d.get("executing_time", []) or []
+            if not qt or not et:
+                continue
+
+            m = min(day_bucket_len, len(qt), len(et))
+            if m <= 0:
+                continue
+
+            # peso = visited giornaliero (se dict: somma priorità)
+            visited = qstats.get("visited", 0)
+            if isinstance(visited, dict):
+                w = float(sum(v for v in visited.values() if v is not None and v > 0))
+            else:
+                w = float(visited) if visited is not None else 0.0
+
+            if w <= 0:
+                continue
+
+            for i in range(m):
+                rt = float(qt[i]) + float(et[i])  # queue+exec
+                num[i] += rt * w
+                den[i] += w
+
+        day_mean = [(num[i] / den[i]) if den[i] > 0 else np.nan for i in range(day_bucket_len)]
+        if ms_to_seconds:
+            day_mean = [x / 1000.0 if np.isfinite(x) else x for x in day_mean]
+
+        out.extend(day_mean)
+
+    return out
+
+
 # =========================
 # MAIN MERGED
 # =========================
@@ -702,7 +775,7 @@ def analyze_transient_analysis_directory(
 
         # totali
         total_exec_by_replica[fname] = extract_total_metric_series(data, metric_key="executing_time")
-        total_rt_by_replica[fname] = extract_total_response_series(data)
+        total_rt_by_replica[fname] = extract_total_response_mean_per_bucket(data, ms_to_seconds=False)
 
         # system per giorno
         system_rt_by_replica[fname] = extract_system_response_per_day(data)
