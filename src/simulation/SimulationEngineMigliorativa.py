@@ -67,26 +67,24 @@ class SimulationEngine:
         may_day_counter = 0  # conta i giorni di maggio complessivi (attraverso may1 + may2)
 
         for m, ndays in zip(months, days_per_month):
-            rate = _get_base_rate(m)
+            # prova prima "may", poi "may_arrival_rate"
+            if m in data:
+                rate = float(data[m])
+                if m == "may":
+                    rate=rate*0.85  # valore medio per maggio
+                rates.append([rate,ndays])
+            else:
+                raise KeyError(f"Mese '{m}' non presente (né '{m}' né '{m}_arrival_rate') in months_arrival_rate.json")
+        ratesToReturn = []
+        ratesToReturn.extend([rates[0][0]]*rates[0][1])
+        linearly_increasing_step = rates[0][0]-rates[1][0]
+        step_per_day = linearly_increasing_step / 20
+        for i in range(1,20):
+            ratesToReturn.append(rates[0][0] - step_per_day * i)
 
-            # mese "logico" (may1/may2 vengono considerati may)
-            logical_month = "may" if m.startswith("may") else m
-
-            for i in range(int(ndays)):
-                if logical_month == "may":
-                    # i: indice dentro al blocco corrente; may_day_counter: indice assoluto su maggio
-                    # (così se usi may1 + may2 continua correttamente oltre i 15)
-                    if may_day_counter < 15:
-                        base = rate * 1.2
-                    else:
-                        base = rate * 0.8
-                    may_day_counter += 1
-                else:
-                    base = rate
-
-                rates.append(float(base))
-
-        return rates
+        ratesToReturn.extend([rates[1][0]]*rates[1][1])
+        print(ratesToReturn)
+        return ratesToReturn
 
     
 
@@ -108,7 +106,7 @@ class SimulationEngine:
             endBlock.setStartBlock(startingBlock)
 
             # Imposta i daily_rates costanti da arrival_rate.json
-            daily_rates = self.getArrivalsEqualsRates(["may1", "may2"], [15, 110])
+            daily_rates = self.getArrivalsEqualsRates(["may", "june"], [7, 190])
             startingBlock.setDailyRates(daily_rates)
 
             # Non spostiamo l'intervallo temporale: ogni replica è una run indipendente

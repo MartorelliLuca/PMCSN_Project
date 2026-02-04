@@ -117,7 +117,7 @@ def main():
 
     if scelta_simulazione == "1":
         print("▶ Avvio simulazione orizzonte finito...\n")
-        engine.run_finito_experiment(n_replicas=10)
+        engine.run_finito_experiment(n_replicas=2)
         
     elif scelta_simulazione == "2":
         print("▶ Avvio simulazione orizzonte finito (1 replica)...\n")

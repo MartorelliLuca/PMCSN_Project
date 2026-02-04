@@ -112,7 +112,12 @@ class EndBlockModificato(SimBlockInterface):
                         "visited": {state.get_queue_name(): 1},
                         "queue_time": {state.get_queue_name(): time_in_queue},
                         "executing_time": {state.get_queue_name(): time_executing},
-                        "queue_lenght": {state.get_queue_name(): in_code}
+                        "queue_lenght": {state.get_queue_name(): in_code},
+                        "data": {
+                            "queue_time": [time_in_queue,],
+                            "queue_lenght": [in_code,],
+                            "executing_time": [time_executing,],
+                        }
                     }
                 elif state.get_queue_name() not in daily_stats[queue].get("visited", {}):
                     stat = daily_stats[queue]
@@ -120,19 +125,32 @@ class EndBlockModificato(SimBlockInterface):
                     stat["queue_time"][state.get_queue_name()] = time_in_queue
                     stat["executing_time"][state.get_queue_name()] = time_executing
                     stat["queue_lenght"][state.get_queue_name()] = in_code
+                    if len(stat["data"]["queue_time"]) < 50*50 and stat["visited"] % 6 == 0:
+                        stat["data"]["queue_time"].append(time_in_queue)
+                        stat["data"]["queue_lenght"].append(in_code)
+                        stat["data"]["executing_time"].append(time_executing)
                 else:
                     stat = daily_stats[queue]
                     stat["visited"][state.get_queue_name()] += 1
                     stat["queue_time"][state.get_queue_name()] += time_in_queue
                     stat["executing_time"][state.get_queue_name()] += time_executing
                     stat["queue_lenght"][state.get_queue_name()] += in_code
+                    if len(stat["data"]["queue_time"]) < 50*50 and stat["visited"] % 6 == 0:
+                        stat["data"]["queue_time"].append(time_in_queue)
+                        stat["data"]["queue_lenght"].append(in_code)
+                        stat["data"]["executing_time"].append(time_executing)
             else:
                 if queue not in daily_stats:
                     daily_stats[queue] = {
                         "visited": 1,
                         "queue_time": time_in_queue,
                         "queue_lenght": in_code,
-                        "executing_time": time_executing
+                        "executing_time": time_executing,
+                        "data": {
+                            "queue_time": [time_in_queue,],
+                            "queue_lenght": [in_code,],
+                            "executing_time": [time_executing,],
+                        }
                     }
                 else:
                     stat = daily_stats[queue]
@@ -140,6 +158,10 @@ class EndBlockModificato(SimBlockInterface):
                     stat["queue_time"] += time_in_queue
                     stat["queue_lenght"] += in_code
                     stat["executing_time"] += time_executing
+                    if stat["visited"] < 25*50 and stat["visited"] % 6 == 0:
+                        stat["data"]["queue_time"].append(time_in_queue)
+                        stat["data"]["queue_lenght"].append(in_code)
+                        stat["data"]["executing_time"].append(time_executing)
 
     def putInQueue(self, person: Person, timestamp: datetime) -> list[Event]:
         """Riceve una persona che ha completato il sistema. Calcola e aggrega i dati giornalieri.

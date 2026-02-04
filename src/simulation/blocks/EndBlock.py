@@ -158,7 +158,7 @@ class EndBlock(SimBlockInterface):
                 stat["queue_time"][state.get_queue_name()] = time_in_queue
                 stat["executing_time"][state.get_queue_name()] = time_executing
                 stat["queue_lenght"][state.get_queue_name()] = in_code
-                if len(stat["data"]["queue_time"]) < 50*50 and sum(stat["visited"].values()) % 50 == 0:
+                if len(stat["data"]["queue_time"]) < 50*50 and sum(stat["visited"].values()) % 15 == 0:
                     stat["data"]["queue_time"].append(time_in_queue)
                     stat["data"]["queue_lenght"].append(in_code)
                     stat["data"]["executing_time"].append(time_executing)
@@ -168,7 +168,7 @@ class EndBlock(SimBlockInterface):
                 stat["queue_time"][state.get_queue_name()] += time_in_queue
                 stat["executing_time"][state.get_queue_name()] += time_executing
                 stat["queue_lenght"][state.get_queue_name()] += in_code
-                if len(stat["data"]["queue_time"]) < 50*50 and sum(stat["visited"].values()) % 50 == 0:
+                if len(stat["data"]["queue_time"]) < 50*50 and sum(stat["visited"].values()) % 15 == 0:
                     stat["data"]["queue_time"].append(time_in_queue)
                     stat["data"]["queue_lenght"].append(in_code)
                     stat["data"]["executing_time"].append(time_executing)
@@ -191,7 +191,7 @@ class EndBlock(SimBlockInterface):
                 stat["queue_time"] += time_in_queue
                 stat["queue_lenght"] += in_code
                 stat["executing_time"] += time_executing
-                if stat["visited"] < 25*50 and stat["visited"] % 50 == 0:
+                if stat["visited"] < 25*50 and stat["visited"] % 15 == 0:
                     stat["data"]["queue_time"].append(time_in_queue)
                     stat["data"]["queue_lenght"].append(in_code)
                     stat["data"]["executing_time"].append(time_executing)
